@@ -692,11 +692,13 @@ list_backups() {
         # Convert backups list to a format Zenity can read
         backup_list=$(echo "$backups" | tr ' ' '\n')
         
-        zenity --list --title="Available Backups" --column="Backups" $backup_list --width=600 --height=800
+        zenity --list --title="Available Backups" --column="Backups" --width=600 --height=800 $backup_list
     fi
     
-    read -p "Press enter to return to the backup menu." choice
+    # Show a Zenity dialog to return to the backup menu
+    zenity --info --title="Return to Menu" --text="Press OK to return to the backup menu." --width=600 --height=800
 }
+
 
 
 
@@ -766,144 +768,131 @@ backup() {
 
 
 
-# Function for password manager
 PASSWORD_FILE="$HOME/passwords.enc"
 PASSPHRASE="my_secret_passphrase"
 
 # Function to encrypt a password
 encrypt_password() {
-    local password
-    password=$(zenity --password --title="Enter Password" --width=400 --height=200)
-    if [ -z "$password" ]; then
-        zenity --error --title="Error" --text="No password entered."
-        return 1
-    else
-        echo -n "$password" | openssl enc -aes-256-cbc -pbkdf2 -pass pass:"$PASSPHRASE"
-    fi
+    echo -n "$1" | openssl enc -aes-256-cbc -pbkdf2 -pass pass:"$PASSPHRASE" | base64 -w 0
 }
-
 
 # Function to decrypt a password
 decrypt_password() {
-    local encrypted_password
-    encrypted_password=$(zenity --password --title="Enter Passphrase" --width=400 --height=200)
-    if [ -z "$encrypted_password" ]; then
-        zenity --error --title="Error" --text="No passphrase entered."
-        return 1
-    else
-        echo -n "$1" | openssl enc -d -aes-256-cbc -pbkdf2 -pass pass:"$encrypted_password"
-    fi
+    echo -n "$1" | base64 --decode | openssl enc -d -aes-256-cbc -pbkdf2 -pass pass:"$PASSPHRASE"
 }
-
-
 
 # Function to add a password
 add_password() {
     clear
     echo "Add Password"
     
-    # Prompt the user for the service name
-    service=$(zenity --entry --title="Add Password" --text="Enter the service name:")
+    service=$(zenity --entry --title="Add Password" --text="Enter the service name:" --width=600 --height=800)
     if [ -z "$service" ]; then
-        zenity --error --title="Error" --text="Service name cannot be empty."
+        zenity --error --title="Error" --text="Service name cannot be empty." --width=600 --height=800
         return
     fi
     
-    # Prompt the user for the username
-    username=$(zenity --entry --title="Add Password" --text="Enter the username:")
+    # Check if the service already exists
+    if grep -q "^$service:" "$PASSWORD_FILE"; then
+        zenity --error --title="Error" --text="Service name already exists." --width=600 --height=800
+        return
+    fi
+
+    username=$(zenity --entry --title="Add Password" --text="Enter the username:" --width=600 --height=800)
     if [ -z "$username" ]; then
-        zenity --error --title="Error" --text="Username cannot be empty."
+        zenity --error --title="Error" --text="Username cannot be empty." --width=600 --height=800
         return
     fi
     
-    # Prompt the user for the password
-    password=$(zenity --password --title="Add Password" --width=400 --height=200)
+    password=$(zenity --password --title="Add Password" --width=600 --height=800)
     if [ -z "$password" ]; then
-        zenity --error --title="Error" --text="Password cannot be empty."
+        zenity --error --title="Error" --text="Password cannot be empty." --width=600 --height=800
         return
     fi
     
     encrypted_password=$(encrypt_password "$password")
     echo "$service:$username:$encrypted_password" >> "$PASSWORD_FILE"
     
-    zenity --info --title="Password Added" --text="Password added for $service."
+    zenity --info --title="Password Added" --text="Password added for $service." --width=600 --height=800
 }
-
 
 # Function to view passwords
 view_passwords() {
     clear
     echo "View Passwords"
+
+    if ! zenity --password --title="Authentication Required" --text="Enter your system password:" --width=600 --height=800 | sudo -S true; then
+        zenity --error --title="Error" --text="Authentication failed." --width=600 --height=800
+        return
+    fi
     
     if [ ! -f "$PASSWORD_FILE" ]; then
-        zenity --info --title="View Passwords" --text="No passwords saved."
+        zenity --info --title="View Passwords" --text="No passwords saved." --width=600 --height=800
     else
         passwords_text=""
 
         while IFS=: read -r service username encrypted_password; do
             decrypted_password=$(decrypt_password "$encrypted_password")
-            passwords_text+="Service: $service\n"
-            passwords_text+="Username: $username\n"
-            passwords_text+="Password: $decrypted_password\n\n"
+            passwords_text+="Service: $service\nUsername: $username\nPassword: $decrypted_password\n\n"
         done < "$PASSWORD_FILE"
 
-        zenity --text-info --title="View Passwords" --width=600 --height=400 --filename=- <<< "$passwords_text"
+        if [ -z "$passwords_text" ]; then
+            zenity --info --title="View Passwords" --text="No passwords saved." --width=600 --height=800
+        else
+            zenity --text-info --title="View Passwords" --width=600 --height=800 --filename=<(echo -e "$passwords_text")
+        fi
     fi
 }
-
 
 # Function to delete a password
 delete_password() {
     clear
     echo "Delete Password"
     
-    # Prompt the user to enter the service name to delete
-    service=$(zenity --entry --title="Delete Password" --text="Enter the service name to delete:" --width=300 --height=100)
-    
+    if ! zenity --password --title="Authentication Required" --text="Enter your system password:" --width=600 --height=800 | sudo -S true; then
+        zenity --error --title="Error" --text="Authentication failed." --width=600 --height=800
+        return
+    fi
+
+    service=$(zenity --entry --title="Delete Password" --text="Enter the service name to delete:" --width=600 --height=800)
     if [ -z "$service" ]; then
-        # If the user cancels or leaves the input empty, return
         return
     fi
     
     if [ ! -f "$PASSWORD_FILE" ]; then
-        zenity --info --title="Delete Password" --text="No passwords saved."
+        zenity --info --title="Delete Password" --text="No passwords saved." --width=600 --height=800
     else
-        # Temporarily filter out the service name from the password file and overwrite the original file
         grep -v "^$service:" "$PASSWORD_FILE" > "$PASSWORD_FILE.tmp"
-        mv "$PASSWORD_FILE.tmp" "$PASSWORD_FILE"
-        
-        # Check if any lines were deleted
-        if [ "$(wc -l < "$PASSWORD_FILE")" -lt "$(wc -l < "$PASSWORD_FILE.tmp")" ]; then
-            zenity --info --title="Delete Password" --text="Password for $service deleted."
+        if [ "$(wc -l < "$PASSWORD_FILE")" -gt "$(wc -l < "$PASSWORD_FILE.tmp")" ]; then
+            mv "$PASSWORD_FILE.tmp" "$PASSWORD_FILE"
+            zenity --info --title="Delete Password" --text="Password for $service deleted." --width=600 --height=800
         else
-            zenity --info --title="Delete Password" --text="No password found for $service."
+            rm "$PASSWORD_FILE.tmp"
+            zenity --info --title="Delete Password" --text="No password found for $service." --width=600 --height=800
         fi
     fi
 }
-
 
 # Function to update a password
 update_password() {
     clear
     echo "Update Password"
     
-    # Prompt the user to enter the service name to update
-    service=$(zenity --entry --title="Update Password" --text="Enter the service name to update:" --width=300 --height=100)
-    
+    if ! zenity --password --title="Authentication Required" --text="Enter your system password:" --width=600 --height=800 | sudo -S true; then
+        zenity --error --title="Error" --text="Authentication failed." --width=600 --height=800
+        return
+    fi
+
+    service=$(zenity --entry --title="Update Password" --text="Enter the service name to update:" --width=600 --height=800)
     if [ -z "$service" ]; then
-        # If the user cancels or leaves the input empty, return
         return
     fi
     
     if grep -q "^$service:" "$PASSWORD_FILE"; then
-        # Prompt the user to enter the new username
-        new_username=$(zenity --entry --title="Update Password" --text="Enter the new username:" --width=300 --height=100)
-        
-        # Prompt the user to enter the new password
-        new_password=$(zenity --password --title="Update Password" --text="Enter the new password:" --width=300 --height=100)
+        new_username=$(zenity --entry --title="Update Password" --text="Enter the new username:" --width=600 --height=800)
+        new_password=$(zenity --password --title="Update Password" --text="Enter the new password:" --width=600 --height=800)
         
         if [ -z "$new_username" ] || [ -z "$new_password" ]; then
-            # If the user cancels or leaves any input empty, return
             return
         fi
         
@@ -912,46 +901,46 @@ update_password() {
         echo "$service:$new_username:$encrypted_password" >> "$PASSWORD_FILE.tmp"
         mv "$PASSWORD_FILE.tmp" "$PASSWORD_FILE"
         
-        zenity --info --title="Update Password" --text="Password for $service updated."
+        zenity --info --title="Update Password" --text="Password for $service updated." --width=600 --height=800
     else
-        zenity --info --title="Update Password" --text="No password found for $service."
+        zenity --info --title="Update Password" --text="No password found for $service." --width=600 --height=800
     fi
-    
-    read -p "Press enter to return to the password manager menu." choice
 }
 
-
-# Function for password manager menu
+# Main function for password manager
 password_manager() {
     while true; do
         clear
-        choice=$(zenity --list --title="Password Manager" --text="Choose an option:" --column="Option" "Add Password" "View Passwords" "Delete Password" "Update Password" "Return to Main Menu" --width=300 --height=300 --cancel-label="Return to Main Menu")
+        choice=$(zenity --list --title="Password Manager" --text="Choose an option:" --column="Option" \
+            "1 Add Password" "2 View Passwords" "3 Delete Password" "4 Update Password" "5 Return to Main Menu" \
+            --width=600 --height=800 --cancel-label="Return to Main Menu")
         if [ -z "$choice" ]; then
-            # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $choice in
-            "Add Password")
+            "1 Add Password")
                 add_password
                 ;;
-            "View Passwords")
+            "2 View Passwords")
                 view_passwords
                 ;;
-            "Delete Password")
+            "3 Delete Password")
                 delete_password
                 ;;
-            "Update Password")
+            "4 Update Password")
                 update_password
                 ;;
-            "Return to Main Menu")
+            "5 Return to Main Menu")
                 return
                 ;;
             *)
-                zenity --error --text="Invalid choice. Please select a valid option."
+                zenity --error --text="Invalid choice. Please select a valid option." --width=600 --height=800
                 ;;
         esac
     done
 }
+
+
 
 
 # Function to display network interfaces
