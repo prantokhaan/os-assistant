@@ -946,7 +946,7 @@ password_manager() {
 # Function to display network interfaces
 display_network_interfaces() {
     network_info=$(ip addr show)
-    zenity --text-info --title="Network Interfaces" --width=600 --height=400 --filename=<(echo "$network_info")
+    zenity --text-info --title="Network Interfaces" --width=600 --height=800 --filename=<(echo "$network_info")
 }
 
 
@@ -955,7 +955,7 @@ ping_host() {
     host=$(zenity --entry --title="Ping Host" --text="Enter the host to ping:")
     if [ -n "$host" ]; then
         ping_result=$(ping -c 4 "$host")  # Send 4 ICMP echo request packets and capture output
-        zenity --info --title="Ping Result" --width=600 --height=400 --text="$ping_result"
+        zenity --info --title="Ping Result" --width=600 --height=800 --text="$ping_result"
     else
         zenity --error --title="Error" --text="No host entered."
     fi
@@ -967,38 +967,79 @@ ping_host() {
 traceroute_destination() {
     destination=$(zenity --entry --title="Traceroute Destination" --text="Enter the destination to traceroute:")
     if [ -n "$destination" ]; then
-        traceroute_result=$(traceroute "$destination")  # Perform traceroute and capture output
-        zenity --text-info --title="Traceroute Result" --width=600 --height=400 --text="$traceroute_result"
+        # Create a temporary file to store the traceroute result
+        temp_file=$(mktemp)
+        
+        # Run traceroute and redirect both stdout and stderr to the temporary file
+        traceroute "$destination" &> "$temp_file"
+
+        # Check if the temporary file has any content
+        if [ -s "$temp_file" ]; then
+            # Display the contents of the temporary file in Zenity
+            zenity --text-info --title="Traceroute Result" --width=600 --height=800 --filename="$temp_file"
+        else
+            zenity --info --title="Traceroute Result" --text="No traceroute result for $destination." --width=600 --height=200
+        fi
+        
+        # Remove the temporary file
+        rm -f "$temp_file"
     else
         zenity --error --title="Error" --text="No destination entered."
     fi
 }
 
 
+
 # Function to perform DNS lookup
 dns_lookup() {
     target=$(zenity --entry --title="DNS Lookup" --text="Enter the domain name or IP address to lookup:")
     if [ -n "$target" ]; then
-        nslookup_result=$(nslookup "$target")  # Perform DNS lookup and capture output
-        zenity --text-info --title="DNS Lookup Result" --width=600 --height=400 --text="$nslookup_result"
+        # Create a temporary file to store the nslookup result
+        temp_file=$(mktemp)
+        
+        # Run nslookup and redirect both stdout and stderr to the temporary file
+        nslookup "$target" &> "$temp_file"
+
+        # Check if the temporary file has any content
+        if [ -s "$temp_file" ]; then
+            # Display the contents of the temporary file in Zenity
+            zenity --text-info --title="DNS Lookup Result" --width=600 --height=400 --filename="$temp_file"
+        else
+            zenity --info --title="DNS Lookup Result" --text="No DNS lookup result for $target." --width=600 --height=200
+        fi
+        
+        # Remove the temporary file
+        rm -f "$temp_file"
     else
         zenity --error --title="Error" --text="No target entered."
     fi
 }
 
 
+
 # Function to display netstat information
 show_netstat() {
-    netstat_info=$(netstat -tuln)  # Retrieve netstat information
-    zenity --text-info --title="Netstat Information" --width=600 --height=400 --text="$netstat_info"
+    # Create a temporary file to store the netstat information
+    temp_file=$(mktemp)
+    
+    # Run netstat and redirect both stdout and stderr to the temporary file
+    netstat -tuln &> "$temp_file"
+
+    # Check if the temporary file has any content
+    if [ -s "$temp_file" ]; then
+        # Display the contents of the temporary file in Zenity
+        zenity --text-info --title="Netstat Information" --width=600 --height=800 --filename="$temp_file"
+    else
+        zenity --info --title="Netstat Information" --text="No netstat information available." --width=600 --height=200
+    fi
+    
+    # Remove the temporary file
+    rm -f "$temp_file"
 }
 
 
-# Function to monitor network bandwidth
-monitor_bandwidth() {
-    bandwidth_info=$(sudo iftop -t -s 1 -L 10)  # Monitor network bandwidth usage for 10 seconds
-    zenity --text-info --title="Bandwidth Monitor" --width=800 --height=600 --text="$bandwidth_info"
-}
+
+
 
 
 # Function for network utilities
@@ -1007,26 +1048,24 @@ network_utilities() {
         choice=$(zenity --list --title="Network Utilities" \
             --width=600 --height=800 \
             --column="Option" --column="Description" \
-            "Display Network Interfaces" "View network interfaces" \
-            "Ping" "Ping a host" \
-            "Traceroute" "Traceroute to a destination" \
-            "DNS Lookup" "Perform a DNS lookup" \
-            "Netstat" "Display network statistics" \
-            "Bandwidth Monitoring" "Monitor network bandwidth" \
-            "Return to Main Menu" "Return to the main menu")
+            1 "Display Network Interfaces" \
+            2 "Ping" \
+            3 "Traceroute" \
+            4 "DNS Lookup" \
+            5 "Netstat" \
+            7 "Return to Main Menu")
 if [ -z "$choice" ]; then
             # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $choice in
-            "Display Network Interfaces") display_network_interfaces ;;
-            "Ping") ping_host ;;
-            "Traceroute") traceroute_destination ;;
-            "DNS Lookup") dns_lookup ;;
-            "Netstat") show_netstat ;;
-            "Bandwidth Monitoring") monitor_bandwidth ;;
-            "Return to Main Menu") return ;;
-            *) echo "Invalid choice. Please try again." ;;
+            1) display_network_interfaces ;;
+            2) ping_host ;;
+            3) traceroute_destination ;;
+            4) dns_lookup ;;
+            5) show_netstat ;;
+            6) return ;;
+            *) zenity --error --text="Invalid choice. Please select a valid option." ;;
         esac
     done
 }
@@ -1038,120 +1077,184 @@ text_manipulation() {
         choice=$(zenity --list \
             --title="Text Manipulation" \
             --text="Choose an option:" \
-            --column="Option" \
-            "Search for a pattern in a file" \
-            "Replace a pattern in a file" \
-            "Convert text to lowercase" \
-            "Convert text to uppercase" \
-            "Sort lines in a file" \
-            "Return to the main menu")
+            --column="Option" --column="Description" \
+            1 "Search for a pattern in a file" \
+            2 "Replace a pattern in a file" \
+            3 "Convert text to lowercase" \
+            4 "Convert text to uppercase" \
+            5 "Sort lines in a file" \
+            6 "Count occurrences of a pattern in a file" \
+            7 "Remove duplicate lines from a file" \
+            8 "Reverse lines in a file" \
+            9 "Return to the main menu" \
+            --height=800 --width=600)
         if [ -z "$choice" ]; then
             # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $choice in
-            "Search for a pattern in a file") search_pattern ;;
-            "Replace a pattern in a file") replace_pattern ;;
-            "Convert text to lowercase") convert_to_lowercase ;;
-            "Convert text to uppercase") convert_to_uppercase ;;
-            "Sort lines in a file") sort_lines ;;
-            "Return to the main menu") return ;;
-            *) echo "Invalid choice. Please select an option." ;;
+            1) search_pattern ;;
+            2) replace_pattern ;;
+            3) convert_to_lowercase ;;
+            4) convert_to_uppercase ;;
+            5) sort_lines ;;
+            6) count_pattern_occurrences ;;
+            7) remove_duplicate_lines ;;
+            8) reverse_lines ;;
+            9) return ;;
         esac
         
-        zenity --question --text="Do you want to continue?" --title="Continue" || break
     done
 }
 
 
+count_pattern_occurrences() {
+    file=$(zenity --file-selection --title="Select File" --text="Select the file to search in:" --height=800 --width=600)
+    if [ -z "$file" ]; then
+        zenity --error --title="Error" --text="No file selected." --height=800 --width=600
+        return
+    fi
+
+    pattern=$(zenity --entry --title="Enter Pattern" --text="Enter the pattern to count occurrences:" --height=800 --width=600)
+    if [ -z "$pattern" ]; then
+        zenity --error --title="Error" --text="No pattern entered." --height=800 --width=600
+        return
+    fi
+
+    occurrences=$(grep -o "$pattern" "$file" | wc -l)
+    zenity --info --title="Pattern Occurrences" --text="Number of occurrences of '$pattern' in '$file': $occurrences" --height=800 --width=600
+}
+
+
+remove_duplicate_lines() {
+    file=$(zenity --file-selection --title="Select File" --text="Select the file to remove duplicates from:" --height=800 --width=600)
+    if [ -z "$file" ]; then
+        zenity --error --title="Error" --text="No file selected." --height=800 --width=600
+        return
+    fi
+
+    sorted_file=$(mktemp)
+    sort -u "$file" > "$sorted_file"
+    mv "$sorted_file" "$file"
+
+    zenity --info --title="Remove Duplicates" --text="Duplicate lines removed from '$file'." --height=800 --width=600
+}
+
+reverse_lines() {
+    file=$(zenity --file-selection --title="Select File" --text="Select the file to reverse lines:" --height=800 --width=600)
+    if [ -z "$file" ]; then
+        zenity --error --title="Error" --text="No file selected." --height=800 --width=600
+        return
+    fi
+
+    reverse_file=$(mktemp)
+    tac "$file" > "$reverse_file"
+    mv "$reverse_file" "$file"
+
+    zenity --info --title="Reverse Lines" --text="Lines in '$file' reversed." --height=800 --width=600
+}
+
+
+
+
 # Function to search for a pattern in a file
 search_pattern() {
-    pattern=$(zenity --entry --title="Search Pattern" --text="Enter the pattern to search for:")
-    filename=$(zenity --file-selection --title="Select File" --filename="$HOME")
+    pattern=$(zenity --entry --title="Search Pattern" --text="Enter the pattern to search for:" --height=800 --width=600)
+    filename=$(zenity --file-selection --title="Select File" --filename="$HOME" --height=800 --width=600)
 
     if [ -n "$pattern" ] && [ -n "$filename" ]; then
         result=$(grep "$pattern" "$filename")
-        zenity --info --title="Search Result" --text="$result"
+        zenity --info --title="Search Result" --text="$result" --height=800 --width=600
     else
-        zenity --error --title="Error" --text="Pattern or file not provided."
+        zenity --error --title="Error" --text="Pattern or file not provided." --height=800 --width=600
     fi
 }
 
 
+
 # Function to replace a pattern in a file
 replace_pattern() {
-    old_pattern=$(zenity --entry --title="Replace Pattern" --text="Enter the pattern to replace:")
-    new_pattern=$(zenity --entry --title="Replace Pattern" --text="Enter the new pattern:")
-    filename=$(zenity --file-selection --title="Select File" --filename="$HOME")
+    old_pattern=$(zenity --entry --title="Replace Pattern" --text="Enter the pattern to replace:" --height=800 --width=600)
+    new_pattern=$(zenity --entry --title="Replace Pattern" --text="Enter the new pattern:" --height=800 --width=600)
+    filename=$(zenity --file-selection --title="Select File" --filename="$HOME" --height=800 --width=600)
 
     if [ -n "$old_pattern" ] && [ -n "$new_pattern" ] && [ -n "$filename" ]; then
         sed -i "s/$old_pattern/$new_pattern/g" "$filename"
-        zenity --info --title="Replacement Complete" --text="Pattern replaced in $filename"
+        zenity --info --title="Replacement Complete" --text="Pattern replaced in $filename" --height=800 --width=600
     else
-        zenity --error --title="Error" --text="Pattern or file not provided."
+        zenity --error --title="Error" --text="Pattern or file not provided." --height=800 --width=600
     fi
 }
 
 
 # Function to convert text to lowercase
 convert_to_lowercase() {
-    text=$(zenity --entry --title="Convert to Lowercase" --text="Enter the text to convert to lowercase:")
+    text=$(zenity --entry --title="Convert to Lowercase" --text="Enter the text to convert to lowercase:" --height=800 --width=600)
     
     if [ -n "$text" ]; then
         result=$(echo "$text" | tr '[:upper:]' '[:lower:]')
-        zenity --info --title="Conversion Complete" --text="Converted text:\n$result"
+        zenity --info --title="Conversion Complete" --text="Converted text:\n$result" --height=800 --width=600
     else
-        zenity --error --title="Error" --text="No text provided."
+        zenity --error --title="Error" --text="No text provided." --height=800 --width=600
     fi
 }
 
 
 # Function to convert text to uppercase
 convert_to_uppercase() {
-    text=$(zenity --entry --title="Convert to Uppercase" --text="Enter the text to convert to uppercase:")
+    text=$(zenity --entry --title="Convert to Uppercase" --text="Enter the text to convert to uppercase:" --height=800 --width=600)
     
     if [ -n "$text" ]; then
         result=$(echo "$text" | tr '[:lower:]' '[:upper:]')
-        zenity --info --title="Conversion Complete" --text="Converted text:\n$result"
+        zenity --info --title="Conversion Complete" --text="Converted text:\n$result" --height=800 --width=600
     else
-        zenity --error --title="Error" --text="No text provided."
+        zenity --error --title="Error" --text="No text provided." --height=800 --width=600
     fi
 }
 
 
 # Function to sort lines in a file
 sort_lines() {
-    filename=$(zenity --file-selection --title="Select File to Sort Lines In")
+    filename=$(zenity --file-selection --title="Select File to Sort Lines In" --height=800 --width=600)
     
     if [ -n "$filename" ]; then
         sorted_content=$(sort "$filename")
         zenity --text-info --title="Sorted Lines" --width=600 --height=400 --filename="$filename" --editable
     else
-        zenity --error --title="Error" --text="No file selected."
+        zenity --error --title="Error" --text="No file selected." --height=800 --width=600
     fi
 }
+
 
 
 # Function for package management
 package_management() {
     while true; do
         clear
-        choice=$(zenity --list --title="Package Management" --text="Select an option:" --column="Option" "Install a package" "Update installed packages" "Remove a package" "Search for a package" "List installed packages" "Return to the main menu")
+        choice=$(zenity --list --title="Package Management" --text="Select an option:" --column="Option" --column="Description" \
+        1 "Install a package" \
+        2 "Update installed packages" \
+        3 "Remove a package" \
+        4 "Search for a package" \
+        5 "List installed packages" \
+        6 "Return to the main menu" \
+        --height=800 --width=600)
         if [ -z "$choice" ]; then
             # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $choice in
-            "Install a package") install_package ;;
-            "Update installed packages") update_packages ;;
-            "Remove a package") remove_package ;;
-            "Search for a package") search_package ;;
-            "List installed packages") list_installed_packages ;;
-            "Return to the main menu") return ;;
+            1) install_package ;;
+            2) update_packages ;;
+            3) remove_package ;;
+            4) search_package ;;
+            5) list_installed_packages ;;
+            6) return ;;
             *) zenity --error --text="Invalid choice. Please select a valid option." ;;
         esac
     done
 }
+
 
 
 # Function to install a package
@@ -1246,70 +1349,74 @@ user_management() {
             --title="User Management" \
             --text="Choose an option:" \
             --column="Option" \
-            "Add a user" \
-            "Delete a user" \
-            "List users" \
-            "Sort users by name" \
-            "Sort users by permission" \
-            "View all users' permissions" \
-            "View specific user's permissions" \
-            "Change user permissions" \
-            "Return to main menu")
-        if [ -z "$choice" ]; then
+            --column="Description" \
+            1 "Add a user" \
+            2 "Delete a user" \
+            3 "List users" \
+            4 "Sort users by name" \
+            5 "Sort users by permission" \
+            6 "View all users' permissions" \
+            7 "View specific user's permissions" \
+            8 "Change user permissions" \
+            9 "Return to main menu" \
+            --height=800 \
+            --width=600)
+        if [ -z "$option" ]; then
             # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $option in
-            "Add a user")
-                username=$(zenity --entry --title="Add User" --text="Enter username to add:")
-                sudo useradd "$username" && zenity --info --text="User $username added successfully." || zenity --error --text="Failed to add user $username."
+            1)
+                username=$(zenity --entry --title="Add User" --text="Enter username to add:" --height=800 --width=600)
+                sudo useradd "$username" && zenity --info --text="User $username added successfully." --height=800 --width=600 || zenity --error --text="Failed to add user $username." --height=800 --width=600
                 ;;
-            "Delete a user")
-                username=$(zenity --entry --title="Delete User" --text="Enter username to delete:")
-                sudo userdel -r "$username" && zenity --info --text="User $username deleted successfully." || zenity --error --text="Failed to delete user $username."
+            2)
+                username=$(zenity --entry --title="Delete User" --text="Enter username to delete:" --height=800 --width=600)
+                sudo userdel -r "$username" && zenity --info --text="User $username deleted successfully." --height=800 --width=600 || zenity --error --text="Failed to delete user $username." --height=800 --width=600
                 ;;
-            "List users")
+            3)
                 users=$(cut -d: -f1 /etc/passwd)
-                zenity --info --title="Current users on the system" --text="$users"
+                zenity --info --title="Current users on the system" --text="$users" --height=800 --width=600
                 ;;
-            "Sort users by name")
+            4)
                 sorted_users=$(cut -d: -f1 /etc/passwd | sort)
-                zenity --info --title="Users sorted by name" --text="$sorted_users"
+                zenity --info --title="Users sorted by name" --text="$sorted_users" --height=800 --width=600
                 ;;
-            "Sort users by permission")
+            5)
                 sorted_permissions=$(awk -F: '{print $1, $3}' /etc/passwd | sort -k2n)
-                zenity --info --title="Users sorted by permission (UID)" --text="$sorted_permissions"
+                zenity --info --title="Users sorted by permission (UID)" --text="$sorted_permissions" --height=800 --width=600
                 ;;
-            "View all users' permissions")
+            6)
                 all_permissions=$(awk -F: '{print "User:", $1, "UID:", $3, "GID:", $4, "Home Directory:", $6, "Shell:", $7}' /etc/passwd)
-                zenity --info --title="All users' permissions" --text="$all_permissions"
+                zenity --info --title="All users' permissions" --text="$all_permissions" --height=800 --width=600
                 ;;
-            "View specific user's permissions")
-                username=$(zenity --entry --title="View User Permissions" --text="Enter username to view permissions:")
+            7)
+                username=$(zenity --entry --title="View User Permissions" --text="Enter username to view permissions:" --height=800 --width=600)
                 user_info=$(getent passwd "$username")
                 if [ -n "$user_info" ]; then
                     IFS=: read -r _ _ uid gid _ home shell <<< "$user_info"
                     permissions="User: $username\nUID: $uid\nGID: $gid\nHome Directory: $home\nShell: $shell"
-                    zenity --info --title="User Permissions" --text="$permissions"
+                    zenity --info --title="User Permissions" --text="$permissions" --height=800 --width=600
                 else
-                    zenity --error --text="User $username does not exist."
+                    zenity --error --text="User $username does not exist." --height=800 --width=600
                 fi
                 ;;
-            "Change user permissions")
-                username=$(zenity --entry --title="Change User Permissions" --text="Enter username to change permissions:")
-                uid=$(zenity --entry --title="Change User Permissions" --text="Enter new UID:")
-                gid=$(zenity --entry --title="Change User Permissions" --text="Enter new GID:")
-                sudo usermod -u "$uid" -g "$gid" "$username" && zenity --info --text="Permissions for user $username changed successfully." || zenity --error --text="Failed to change permissions for user $username."
+            8)
+                username=$(zenity --entry --title="Change User Permissions" --text="Enter username to change permissions:" --height=800 --width=600)
+                uid=$(zenity --entry --title="Change User Permissions" --text="Enter new UID:" --height=800 --width=600)
+                gid=$(zenity --entry --title="Change User Permissions" --text="Enter new GID:" --height=800 --width=600)
+                sudo usermod -u "$uid" -g "$gid" "$username" && zenity --info --text="Permissions for user $username changed successfully." --height=800 --width=600 || zenity --error --text="Failed to change permissions for user $username." --height=800 --width=600
                 ;;
-            "Return to main menu")
+            9)
                 return
                 ;;
             *)
-                zenity --error --text="Invalid option. Please choose a valid option."
+                zenity --error --text="Invalid option. Please choose a valid option." --height=800 --width=600
                 ;;
         esac
     done
 }
+
 
 
 
@@ -1317,152 +1424,173 @@ user_management() {
 # Function for system maintenance
 system_maintenance() {
     while true; do
-        choice=$(zenity --list --title="System Maintenance" --column="Options" \
-            "Update the system" "Clean up unused packages" "View running processes" \
-            "Reboot the system" "Check system load" "Check available updates" \
-            "Check system memory usage" "View system logs" "Return to main menu" --height=800 --width=600 --cancel-label="Cancel")
+        choice=$(zenity --list --title="System Maintenance" --column="Options" --column="Description" \
+            1 "System Maintenance" \
+            2 "Clean up unused packages" \
+            3 "View running processes" \
+            4 "Reboot the system" \
+            5 "Check system load" \
+            6 "Check available updates" \
+            7 "Check system memory usage" \
+            8 "View system logs" \
+            9 "Return to main menu" \
+            --height=800 --width=600 --cancel-label="Cancel")
         if [ -z "$choice" ]; then
             # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $choice in
-            "Update the system")
-                zenity --info --text="Updating the system..."
+            1)
+                zenity --info --text="Updating the system..." --height=800 --width=600
                 sudo apt update && sudo apt upgrade -y
-                zenity --info --text="System updated successfully."
+                zenity --info --text="System updated successfully." --height=800 --width=600
                 ;;
-            "Clean up unused packages")
-                zenity --info --text="Cleaning up unused packages..."
+            2)
+                zenity --info --text="Cleaning up unused packages..." --height=800 --width=600
                 sudo apt autoremove -y && sudo apt autoclean
-                zenity --info --text="Unused packages cleaned up successfully."
+                zenity --info --text="Unused packages cleaned up successfully." --height=800 --width=600
                 ;;
-            "View running processes")
-                zenity --info --text="Viewing running processes..."
-                ps aux | zenity --text-info --title="Running Processes"
+            3)
+                ps aux | zenity --text-info --title="Running Processes" --height=800 --width=600
                 ;;
-            "Reboot the system")
-                confirm=$(zenity --question --text="Are you sure you want to reboot the system?")
+            4)
+                confirm=$(zenity --question --text="Are you sure you want to reboot the system?" --height=800 --width=600)
                 if [ "$confirm" = "TRUE" ]; then
-                    zenity --info --text="Rebooting the system..."
+                    zenity --info --text="Rebooting the system..." --height=800 --width=600
                     sudo reboot
                 else
-                    zenity --info --text="Reboot cancelled."
+                    zenity --info --text="Reboot cancelled." --height=800 --width=600
                 fi
                 ;;
-            "Check system load")
-                zenity --info --text="Checking system load..."
-                uptime | zenity --text-info --title="System Load"
+            5)
+                uptime | zenity --text-info --title="System Load" --height=800 --width=600
                 ;;
-            "Check available updates")
-                zenity --info --text="Checking available updates..."
+            6)
                 sudo apt update
-                apt list --upgradable | zenity --text-info --title="Available Updates"
+                apt list --upgradable | zenity --text-info --title="Available Updates" --height=800 --width=600
                 ;;
-            "Check system memory usage")
-                zenity --info --text="Checking system memory usage..."
-                free -h | zenity --text-info --title="System Memory Usage"
+            7)
+                free -h | zenity --text-info --title="System Memory Usage" --height=800 --width=600
                 ;;
-            "View system logs")
-                zenity --info --text="Viewing system logs..."
-                sudo journalctl -xe | zenity --text-info --title="System Logs"
+            8)
+                sudo journalctl -xe | zenity --text-info --title="System Logs" --height=800 --width=600
                 ;;
-            "Return to main menu")
+            9)
                 return
                 ;;
             *)
-                zenity --error --text="Invalid option. Please choose a valid option."
+                zenity --error --text="Invalid option. Please choose a valid option." --height=800 --width=600
                 ;;
         esac
     done
 }
 
+
+
+
 # Function for software installation
 software_installation() {
     while true; do
-        choice=$(zenity --list --title="Software Installation" --text="Choose an option:" --column="Option" "Install a software package" "Search for available packages" "List installed packages" "Remove a software package" "Update package lists" "Upgrade installed packages" "Return to main menu" --height=800 --width=600 --cancel-label="Cancel")
+        choice=$(zenity --list --title="Software Installation" --column="Options" --column="Description" \
+            1 "Install a software package" \
+            2 "Search for available packages" \
+            3 "List installed packages" \
+            4 "Remove a software package" \
+            5 "Update package lists" \
+            6 "Upgrade installed packages" \
+            7 "Return to main menu" \
+            --height=800 --width=600 --cancel-label="Cancel")
         if [ -z "$choice" ]; then
             # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $choice in
-            "Install a software package")
-                package_name=$(zenity --entry --title="Install Package" --text="Enter the name of the package to install:")
+            1)
+                package_name=$(zenity --entry --title="Install Package" --text="Enter the name of the package to install:" --height=800 --width=600)
                 if [ -n "$package_name" ]; then
-                    sudo apt install "$package_name" && zenity --info --title="Success" --text="Package $package_name installed successfully." || zenity --error --title="Error" --text="Failed to install package $package_name."
+                    sudo apt install "$package_name" && zenity --info --title="Success" --text="Package $package_name installed successfully." --height=800 --width=600 || zenity --error --title="Error" --text="Failed to install package $package_name." --height=800 --width=600
                 fi
                 ;;
-            "Search for available packages")
-                keyword=$(zenity --entry --title="Search Packages" --text="Enter the search keyword:")
+            2)
+                keyword=$(zenity --entry --title="Search Packages" --text="Enter the search keyword:" --height=800 --width=600)
                 if [ -n "$keyword" ]; then
                     apt search "$keyword" | zenity --text-info --title="Search Results" --width=600 --height=400
                 fi
                 ;;
-            "List installed packages")
+            3)
                 dpkg -l | zenity --text-info --title="Installed Packages" --width=800 --height=600
                 ;;
-            "Remove a software package")
-                package_name=$(zenity --entry --title="Remove Package" --text="Enter the name of the package to remove:")
+            4)
+                package_name=$(zenity --entry --title="Remove Package" --text="Enter the name of the package to remove:" --height=800 --width=600)
                 if [ -n "$package_name" ]; then
-                    sudo apt remove "$package_name" && zenity --info --title="Success" --text="Package $package_name removed successfully." || zenity --error --title="Error" --text="Failed to remove package $package_name."
+                    sudo apt remove "$package_name" && zenity --info --title="Success" --text="Package $package_name removed successfully." --height=800 --width=600 || zenity --error --title="Error" --text="Failed to remove package $package_name." --height=800 --width=600
                 fi
                 ;;
-            "Update package lists")
-                sudo apt update && zenity --info --title="Success" --text="Package lists updated successfully."
+            5)
+                sudo apt update && zenity --info --title="Success" --text="Package lists updated successfully." --height=800 --width=600
                 ;;
-            "Upgrade installed packages")
-                sudo apt upgrade && zenity --info --title="Success" --text="Installed packages upgraded successfully."
+            6)
+                sudo apt upgrade && zenity --info --title="Success" --text="Installed packages upgraded successfully." --height=800 --width=600
                 ;;
-            "Return to main menu")
+            7)
                 return
                 ;;
             *) 
-                zenity --error --title="Error" --text="Invalid option. Please choose a valid option."
+                zenity --error --title="Error" --text="Invalid option. Please choose a valid option." --height=800 --width=600
                 ;;
         esac
     done
 }
+
 
 
 
 # Function for disk management
 disk_management() {
     while true; do
-        choice=$(zenity --list --title="Disk Management" --text="Choose an option:" --column="Option" "View disk usage" "List partitions" "Format a partition" "Mount a partition" "Unmount a partition" "Return to main menu" --height=800 --width=600 --cancel-label="Cancel")
+        choice=$(zenity --list --title="Disk Management" --text="Choose an option:" --column="Option" --column="Description" \
+            1 "View disk usage" \
+            2 "List partitions" \
+            3 "Format a partition" \
+            4 "Mount a partition" \
+            5 "Unmount a partition" \
+            6 "Return to main menu" \
+            --height=800 --width=600 --cancel-label="Cancel")
         if [ -z "$choice" ]; then
             # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $choice in
-            "View disk usage")
+            1)
                 df -h | zenity --text-info --title="Disk Usage" --width=800 --height=600
                 ;;
-            "List partitions")
+            2)
                 lsblk | zenity --text-info --title="List of Partitions" --width=800 --height=600
                 ;;
-            "Format a partition")
-                partition=$(zenity --entry --title="Format Partition" --text="Enter the partition to format (e.g., /dev/sdb1):")
+            3)
+                partition=$(zenity --entry --title="Format Partition" --text="Enter the partition to format (e.g., /dev/sdb1):" --height=800 --width=600)
                 if [ -n "$partition" ]; then
-                    sudo mkfs.ext4 "$partition" && zenity --info --title="Success" --text="Partition $partition formatted successfully." || zenity --error --title="Error" --text="Failed to format partition $partition."
+                    sudo mkfs.ext4 "$partition" && zenity --info --title="Success" --text="Partition $partition formatted successfully." --height=200 --width=400 || zenity --error --title="Error" --text="Failed to format partition $partition." --height=200 --width=400
                 fi
                 ;;
-            "Mount a partition")
-                partition=$(zenity --entry --title="Mount Partition" --text="Enter the partition to mount (e.g., /dev/sdb1):")
-                mount_point=$(zenity --entry --title="Mount Partition" --text="Enter the mount point:")
+            4)
+                partition=$(zenity --entry --title="Mount Partition" --text="Enter the partition to mount (e.g., /dev/sdb1):" --height=800 --width=600)
+                mount_point=$(zenity --entry --title="Mount Partition" --text="Enter the mount point:" --height=800 --width=600)
                 if [ -n "$partition" ] && [ -n "$mount_point" ]; then
-                    sudo mount "$partition" "$mount_point" && zenity --info --title="Success" --text="Partition $partition mounted at $mount_point." || zenity --error --title="Error" --text="Failed to mount partition $partition."
+                    sudo mount "$partition" "$mount_point" && zenity --info --title="Success" --text="Partition $partition mounted at $mount_point." --height=200 --width=400 || zenity --error --title="Error" --text="Failed to mount partition $partition." --height=200 --width=400
                 fi
                 ;;
-            "Unmount a partition")
-                partition=$(zenity --entry --title="Unmount Partition" --text="Enter the partition to unmount (e.g., /dev/sdb1):")
+            5)
+                partition=$(zenity --entry --title="Unmount Partition" --text="Enter the partition to unmount (e.g., /dev/sdb1):" --height=800 --width=600)
                 if [ -n "$partition" ]; then
-                    sudo umount "$partition" && zenity --info --title="Success" --text="Partition $partition unmounted successfully." || zenity --error --title="Error" --text="Failed to unmount partition $partition."
+                    sudo umount "$partition" && zenity --info --title="Success" --text="Partition $partition unmounted successfully." --height=200 --width=400 || zenity --error --title="Error" --text="Failed to unmount partition $partition." --height=200 --width=400
                 fi
                 ;;
-            "Return to main menu")
+            6)
                 return
                 ;;
             *) 
-                zenity --error --title="Error" --text="Invalid option. Please choose a valid option."
+                zenity --error --title="Error" --text="Invalid option. Please choose a valid option." --height=200 --width=400
                 ;;
         esac
     done
@@ -1475,67 +1603,82 @@ disk_management() {
 # Function for system information
 system_information() {
     while true; do
-        option=$(zenity --list --title="System Information" --text="Choose an option:" --column="Option" "Display system information" "Display CPU information" "Display memory information" "Display disk information" "Display network information" "Return to main menu" --height=800 --width=600 --cancel-label="Cancel")
+        option=$(zenity --list --title="System Information" --text="Choose an option:" --column="Option" --column="Description" \
+            1 "Display system information" \
+            2 "Display CPU information" \
+            3 "Display memory information" \
+            4 "Display disk information" \
+            5 "Display network information" \
+            6 "Return to main menu" \
+            --height=800 --width=600 --cancel-label="Cancel")
         if [ -z "$option" ]; then
             # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $option in
-            "Display system information")
+            1)
                 uname -a | zenity --text-info --title="System Information" --width=800 --height=600
                 ;;
-            "Display CPU information")
+            2)
                 lscpu | zenity --text-info --title="CPU Information" --width=800 --height=600
                 ;;
-            "Display memory information")
+            3)
                 free -h | zenity --text-info --title="Memory Information" --width=800 --height=600
                 ;;
-            "Display disk information")
+            4)
                 df -h | zenity --text-info --title="Disk Information" --width=800 --height=600
                 ;;
-            "Display network information")
+            5)
                 ip addr show | zenity --text-info --title="Network Information" --width=800 --height=600
                 ;;
-            "Return to main menu")
+            6)
                 return
                 ;;
             *) 
-                zenity --error --title="Error" --text="Invalid option. Please choose a valid option."
+                zenity --error --title="Error" --text="Invalid option. Please choose a valid option." --height=200 --width=400
                 ;;
         esac
     done
 }
+
 
 
 service_management() {
     while true; do
-        option=$(zenity --list --title="Service Management" --text="Choose an option:" --column="Option" "Start a service" "Stop a service" "Restart a service" "Enable a service" "Disable a service" "Return to main menu" --height=800 --width=600 --cancel-label="Cancel")
+        option=$(zenity --list --title="Service Management" --text="Choose an option:" --column="Option" --column="Description" \
+            1 "Start a service" \
+            2 "Stop a service" \
+            3 "Restart a service" \
+            4 "Enable a service" \
+            5 "Disable a service" \
+            6 "Return to main menu" \
+            --height=800 --width=600 --cancel-label="Cancel")
         if [ -z "$option" ]; then
             # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $option in
-            "Start a service")
+            1)
                 service_name=$(zenity --entry --title="Start a Service" --text="Enter the name of the service to start:")
                 sudo systemctl start "$service_name" && zenity --info --title="Success" --text="Service $service_name started successfully." || zenity --error --title="Error" --text="Failed to start service $service_name."
                 ;;
-            "Stop a service")
+            2)
                 service_name=$(zenity --entry --title="Stop a Service" --text="Enter the name of the service to stop:")
                 sudo systemctl stop "$service_name" && zenity --info --title="Success" --text="Service $service_name stopped successfully." || zenity --error --title="Error" --text="Failed to stop service $service_name."
                 ;;
-            "Restart a service")
+            3)
                 service_name=$(zenity --entry --title="Restart a Service" --text="Enter the name of the service to restart:")
                 sudo systemctl restart "$service_name" && zenity --info --title="Success" --text="Service $service_name restarted successfully." || zenity --error --title="Error" --text="Failed to restart service $service_name."
                 ;;
-            "Enable a service")
+            4)
                 service_name=$(zenity --entry --title="Enable a Service" --text="Enter the name of the service to enable:")
                 sudo systemctl enable "$service_name" && zenity --info --title="Success" --text="Service $service_name enabled successfully." || zenity --error --title="Error" --text="Failed to enable service $service_name."
                 ;;
-            "Disable a service")
+            5)
                 service_name=$(zenity --entry --title="Disable a Service" --text="Enter the name of the service to disable:")
                 sudo systemctl disable "$service_name" && zenity --info --title="Success" --text="Service $service_name disabled successfully." || zenity --error --title="Error" --text="Failed to disable service $service_name."
                 ;;
-            "Return to main menu")
+            6)
                 return
                 ;;
             *) 
@@ -1544,33 +1687,40 @@ service_management() {
         esac
     done
 }
+
 
 
 system_benchmarking() {
     while true; do
-        option=$(zenity --list --title="System Benchmarking" --text="Choose an option:" --column="Option" "CPU Benchmark" "Memory Benchmark" "Disk Benchmark" "Network Benchmark" "Return to main menu" --height=800 --width=600 --cancel-label="Cancel")
+        option=$(zenity --list --title="System Benchmarking" --text="Choose an option:" --column="Option" --column="Description" \
+            1 "CPU Benchmark" \
+            2 "Memory Benchmark" \
+            3 "Disk Benchmark" \
+            4 "Network Benchmark" \
+            5 "Return to main menu" \
+            --height=800 --width=600 --cancel-label="Cancel")
         if [ -z "$option" ]; then
             # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $option in
-            "CPU Benchmark")
+            1)
                 zenity --info --title="CPU Benchmark" --text="Running CPU benchmark...\nThis may take some time."
                 sysbench cpu --time=10 run | zenity --text-info --title="CPU Benchmark Result" --width=800 --height=600
                 ;;
-            "Memory Benchmark")
+            2)
                 zenity --info --title="Memory Benchmark" --text="Running memory benchmark...\nThis may take some time."
                 sysbench memory --time=10 run | zenity --text-info --title="Memory Benchmark Result" --width=800 --height=600
                 ;;
-            "Disk Benchmark")
+            3)
                 zenity --info --title="Disk Benchmark" --text="Running disk benchmark...\nThis may take some time."
                 sudo fio --name=randwrite --ioengine=posixaio --rw=randwrite --bs=4k --numjobs=4 --size=4G --runtime=60 --group_reporting | zenity --text-info --title="Disk Benchmark Result" --width=800 --height=600
                 ;;
-            "Network Benchmark")
+            4)
                 zenity --info --title="Network Benchmark" --text="Running network benchmark...\nThis may take some time."
                 speedtest-cli | zenity --text-info --title="Network Benchmark Result" --width=800 --height=600
                 ;;
-            "Return to main menu")
+            5)
                 return
                 ;;
             *) 
@@ -1579,6 +1729,7 @@ system_benchmarking() {
         esac
     done
 }
+
 
 
 
