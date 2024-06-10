@@ -2,93 +2,116 @@
 
 # Function to display the main menu
 display_menu() {
-    clear
-    echo "OS Assistant - Main Menu"
-    echo "1. Task Manager"
-    echo "2. File Organizer"
-    echo "3. System Monitor"
-    echo "4. Backup"
-    echo "5. Password Manager"
-    echo "6. Network Utilities"
-    echo "7. Text Manipulation"
-    echo "8. Package Management"
-    echo "9. Remote Access"
-    echo "10. User Management"
-    echo "11. System Maintenance"
-    echo "12. Software Installation"
-    echo "13. Disk Management"
-    echo "14. System Information"
-    echo "15. Exit"
+    choice=$(zenity --list --title="OS Assistant - Main Menu" \
+        --width=600 --height=800 \
+        --column="Option" --column="Description" --ok-label="" \
+        1 "Task Manager" \
+        2 "File Organizer" \
+        3 "System Monitor" \
+        4 "Backup" \
+        5 "Password Manager" \
+        6 "Network Utilities" \
+        7 "Text Manipulation" \
+        8 "Package Management" \
+        9 "User Management" \
+        10 "System Maintenance" \
+        11 "Software Installation" \
+        12 "Disk Management" \
+        13 "System Information" \
+        14 "Service Management" \
+        15 "System Benchmarking" \
+        16 "Exit")
+
+    echo $choice
 }
+
 
 # Function for task manager
 task_manager() {
     while true; do
-        clear
-        echo "Task Manager"
-        echo "1. View all tasks"
-        echo "2. Sort tasks by CPU usage"
-        echo "3. Sort tasks by memory usage"
-        echo "4. Filter tasks by user"
-        echo "5. Filter tasks by process name"
-        echo "6. Kill a task"
-        echo "7. Return to the main menu"
-        
-        read -p "Enter your choice (1-7): " choice
+        choice=$(zenity --list --title="Task Manager" --text="Choose an option" \
+            --width=600 --height=800 \
+            --column="Option" --column="Description" \
+            1 "View all tasks" \
+            2 "Sort tasks by CPU usage" \
+            3 "Sort tasks by memory usage" \
+            4 "Filter tasks by user" \
+            5 "Filter tasks by process name" \
+            6 "Kill a task" \
+            7 "Return to the main menu")
+
         case $choice in
-            1) ps aux ;;
-            2) ps aux --sort=-%cpu ;;
-            3) ps aux --sort=-%mem ;;
-            4) read -p "Enter username to filter tasks: " username
-               ps aux | grep "$username" ;;
-            5) read -p "Enter process name to filter tasks: " process_name
-               ps aux | grep "$process_name" ;;
-            6) read -p "Enter PID of the task to kill: " pid
-               kill -9 "$pid" ;;
-            7) return ;;
-            *) echo "Invalid choice. Please enter a number between 1 and 7." ;;
+            1) 
+                tasks=$(ps aux)
+                zenity --text-info --title="All Tasks" --width=600 --height=800 --filename=<(echo "$tasks")
+                ;;
+            2) 
+                tasks=$(ps aux --sort=-%cpu)
+                zenity --text-info --title="Tasks Sorted by CPU Usage" --width=600 --height=800 --filename=<(echo "$tasks")
+                ;;
+            3) 
+                tasks=$(ps aux --sort=-%mem)
+                zenity --text-info --title="Tasks Sorted by Memory Usage" --width=600 --height=800 --filename=<(echo "$tasks")
+                ;;
+            4) 
+                username=$(zenity --entry --title="Filter Tasks by User" --text="Enter username:")
+                if [ -n "$username" ]; then
+                    tasks=$(ps aux | grep "$username" | grep -v "grep")
+                    zenity --text-info --title="Tasks for User: $username" --width=600 --height=800 --filename=<(echo "$tasks")
+                else
+                    zenity --error --text="No username entered."
+                fi
+                ;;
+            5) 
+                process_name=$(zenity --entry --title="Filter Tasks by Process Name" --text="Enter process name:")
+                if [ -n "$process_name" ]; then
+                    tasks=$(ps aux | grep "$process_name" | grep -v "grep")
+                    zenity --text-info --title="Tasks for Process: $process_name" --width=600 --height=800 --filename=<(echo "$tasks")
+                else
+                    zenity --error --text="No process name entered."
+                fi
+                ;;
+            6) 
+                pid=$(zenity --entry --title="Kill a Task" --text="Enter PID of the task to kill:")
+                if [ -n "$pid" ]; then
+                    kill -9 "$pid" && zenity --info --text="Task with PID $pid killed successfully." || zenity --error --text="Failed to kill task with PID $pid."
+                else
+                    zenity --error --text="No PID entered."
+                fi
+                ;;
+            7) 
+                return
+                ;;
+            *) 
+                zenity --error --text="Invalid choice. Please enter a number between 1 and 7."
+                ;;
         esac
-        
-        read -p "Press enter to continue." choice
     done
 }
 
+
 # Function for file organizer
 file_organizer() {
-    clear
-    echo "File Organizer"
-    
-    # Prompt the user for the folder to organize
-    read -p "Enter the folder to organize (press enter for current directory): " folder
-    folder=${folder:-$(pwd)}  # If no folder is entered, use the current directory
-    
-    # Check if the entered folder exists
+    folder=$(zenity --file-selection --title="Select Folder to Organize" --directory --filename="$PWD/")
+    folder=${folder:-$(pwd)}
+
     if [ ! -d "$folder" ]; then
-        echo "Folder '$folder' does not exist."
-        read -p "Press enter to return to the main menu." choice
+        zenity --error --text="Folder '$folder' does not exist."
         return
     fi
-    
-    # Display the current folder
-    echo "Current folder: $folder"
-    
-    # List all folders in the current folder
-    echo "Folders in $folder:"
-    ls -l -d "$folder"/*/ | awk '{print NR".",$NF}'
-    
-    # Provide options for file management
-    echo
-    echo "Select an option for file management:"
-    echo "1. Move files"
-    echo "2. Copy files"
-    echo "3. Rename files"
-    echo "4. Delete files"
-    echo "5. Sort files"
-    echo "6. Add new folder"
-    echo "7. Add new file"
-    echo "8. Cancel and return to the main menu"
-    
-    read -p "Enter your choice (1-8): " choice
+
+    choice=$(zenity --list --title="File Organizer" --text="Select an option for file management:" \
+        --width=600 --height=800 \
+        --column="Option" --column="Description" \
+        1 "Move files" \
+        2 "Copy files" \
+        3 "Rename files" \
+        4 "Delete files" \
+        5 "Sort files" \
+        6 "Add new folder" \
+        7 "Add new file" \
+        8 "Cancel and return to the main menu")
+
     case $choice in
         1) move_files "$folder" ;;
         2) copy_files "$folder" ;;
@@ -98,291 +121,292 @@ file_organizer() {
         6) add_new_folder "$folder" ;;
         7) add_new_file "$folder" ;;
         8) return ;;
-        *) echo "Invalid choice. Please enter a number between 1 and 8." ;;
+        *) zenity --error --text="Invalid choice. Please enter a number between 1 and 8." ;;
     esac
 }
 
 # Function to add a new folder
 add_new_folder() {
     folder="$1"
-    
+
     # Prompt the user for the new folder name
-    read -p "Enter the name of the new folder: " new_folder_name
+    new_folder_name=$(zenity --entry --title="Add New Folder" --text="Enter the name of the new folder:")
     
-    # Create the new folder
-    mkdir "$folder/$new_folder_name"
-    
-    echo "New folder '$new_folder_name' has been created."
-    read -p "Press enter to return to the main menu." choice
+    if [ -n "$new_folder_name" ]; then
+        # Create the new folder
+        mkdir "$folder/$new_folder_name"
+        
+        zenity --info --text="New folder '$new_folder_name' has been created."
+    else
+        zenity --error --text="No folder name entered."
+    fi
 }
+
 
 # Function to add a new file
 add_new_file() {
     folder="$1"
-    
+
     # Prompt the user for the new file name
-    read -p "Enter the name of the new file: " new_file_name
+    new_file_name=$(zenity --entry --title="Add New File" --text="Enter the name of the new file:")
     
-    # Create an empty file
-    touch "$folder/$new_file_name"
-    
-    echo "New file '$new_file_name' has been created."
-    read -p "Press enter to return to the main menu." choice
+    if [ -n "$new_file_name" ]; then
+        # Create an empty file
+        touch "$folder/$new_file_name"
+        
+        zenity --info --text="New file '$new_file_name' has been created."
+    else
+        zenity --error --text="No file name entered."
+    fi
 }
 
 
-
-# Function to move files
 # Function to move files
 move_files() {
     source_folder="$1"
-    
-    # Prompt the user for the destination folder
-    read -p "Enter the destination folder to move files to: " destination_folder
-    
-    # Check if the destination folder exists
-    if [ ! -d "$destination_folder" ]; then
-        echo "Destination folder '$destination_folder' does not exist."
-        read -p "Press enter to return to the main menu." choice
-        return
-    fi
-    
-    # Prompt the user to enter the file(s) to move
-    read -p "Enter the file(s) to move (use space to separate multiple files): " files_to_move
-    
-    # Move the specified files to the destination folder
-    mv $files_to_move "$destination_folder"/
-    
-    echo "Files have been moved to '$destination_folder'."
-    read -p "Press enter to return to the main menu." choice
-}
 
+    # Prompt the user to select the destination folder
+    destination_folder=$(zenity --file-selection --title="Select Destination Folder" --directory)
+    
+    if [ -n "$destination_folder" ]; then
+        # Prompt the user to select the file(s) to move
+        files_to_move=$(zenity --file-selection --title="Select Files to Move" --multiple --separator=" ")
+        
+        if [ -n "$files_to_move" ]; then
+            # Move the selected files to the destination folder
+            mv $files_to_move "$destination_folder"/
+            zenity --info --text="Files have been moved to '$destination_folder'."
+        else
+            zenity --error --text="No files selected."
+        fi
+    else
+        zenity --error --text="No destination folder selected."
+    fi
+}
 
 
 # Function to copy files
 copy_files() {
     source_folder="$1"
+
+    # Prompt the user to select the destination folder
+    destination_folder=$(zenity --file-selection --title="Select Destination Folder" --directory)
     
-    # Prompt the user for the destination folder
-    read -p "Enter the destination folder to copy files to: " destination_folder
-    
-    # Check if the destination folder input is empty
-    if [ -z "$destination_folder" ]; then
-        echo "Destination folder cannot be empty."
-        read -p "Press enter to return to the main menu." choice
-        return
-    fi
-    
-    # Trim leading and trailing whitespace from the destination folder path
-    destination_folder="$(echo -e "$destination_folder" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-    
-    # Check if the destination folder exists
-    if [ ! -d "$destination_folder" ]; then
-        echo "Destination folder '$destination_folder' does not exist."
-        read -p "Press enter to return to the main menu." choice
-        return
-    fi
-    
-    # Prompt the user to enter the file(s) to copy
-    read -p "Enter the file(s) to copy (use space to separate multiple files): " files_to_copy
-    
-    # Check if the input is a directory
-    if [ -d "$files_to_copy" ]; then
-        # Copy directory and its contents recursively
-        cp -r "$files_to_copy" "$destination_folder"/
+    if [ -n "$destination_folder" ]; then
+        # Prompt the user to select the file(s) to copy
+        files_to_copy=$(zenity --file-selection --title="Select Files to Copy" --multiple --separator=" ")
+        
+        if [ -n "$files_to_copy" ]; then
+            # Copy the selected files to the destination folder
+            cp -r $files_to_copy "$destination_folder"/
+            zenity --info --text="Files have been copied to '$destination_folder'."
+        else
+            zenity --error --text="No files selected."
+        fi
     else
-        # Copy files
-        cp "$files_to_copy" "$destination_folder"/
+        zenity --error --text="No destination folder selected."
     fi
-    
-    echo "Files have been copied to '$destination_folder'."
-    read -p "Press enter to return to the main menu." choice
 }
-
-
-
 
 
 # Function to rename files
 rename_files() {
     folder="$1"
-    
-    clear
-    echo "Rename Options:"
-    echo "1. Rename Folder"
-    echo "2. Rename File"
-    read -p "Enter your choice (1-2): " choice
+
+    # Display the rename options
+    choice=$(zenity --list --title="Rename Options" --text="Select an option to rename:" \
+        --column="Option" --column="Description" \
+        1 "Rename Folder" \
+        2 "Rename File")
     
     case $choice in
-        1) rename_folder "$folder" ;;
-        2) rename_file "$folder" ;;
-        *) echo "Invalid choice. Please enter a number between 1 and 2." ;;
+        "Rename Folder") rename_folder "$folder" ;;
+        "Rename File") rename_file "$folder" ;;
+        *) zenity --error --text="Invalid choice." ;;
     esac
 }
 
 # Function to rename a folder
 rename_folder() {
     folder="$1"
+
+    # Prompt the user to select the folder to rename
+    old_name=$(zenity --entry --title="Rename Folder" --text="Enter the folder to rename:")
     
-    # Prompt the user to enter the folder to rename
-    read -p "Enter the folder to rename: " old_name
-    
-    # Check if the folder exists in the specified directory
-    if [ ! -d "$folder/$old_name" ]; then
-        echo "Folder '$old_name' does not exist in the directory '$folder'."
-        read -p "Press enter to return to the main menu." choice
-        return
+    if [ -n "$old_name" ]; then
+        # Check if the folder exists in the specified directory
+        if [ ! -d "$folder/$old_name" ]; then
+            zenity --error --text="Folder '$old_name' does not exist in the directory '$folder'."
+            return
+        fi
+        
+        # Prompt the user to enter the new folder name
+        new_name=$(zenity --entry --title="Rename Folder" --text="Enter the new name for the folder '$old_name':")
+        
+        if [ -n "$new_name" ]; then
+            # Rename the folder
+            mv "$folder/$old_name" "$folder/$new_name"
+            zenity --info --text="Folder '$old_name' has been renamed to '$new_name'."
+        else
+            zenity --error --text="No new name entered for the folder."
+        fi
+    else
+        zenity --error --text="No folder name entered."
     fi
-    
-    # Prompt the user to enter the new folder name
-    read -p "Enter the new name for the folder '$old_name': " new_name
-    
-    # Rename the folder
-    mv "$folder/$old_name" "$folder/$new_name"
-    
-    echo "Folder '$old_name' has been renamed to '$new_name'."
-    read -p "Press enter to return to the main menu." choice
 }
+
 
 # Function to rename a file
 rename_file() {
     folder="$1"
+
+    # Prompt the user to select the file to rename
+    old_name=$(zenity --entry --title="Rename File" --text="Enter the file to rename:")
     
-    # Prompt the user to enter the file to rename
-    read -p "Enter the file to rename: " old_name
-    
-    # Check if the file exists in the specified folder
-    if [ ! -f "$folder/$old_name" ]; then
-        echo "File '$old_name' does not exist in the folder '$folder'."
-        read -p "Press enter to return to the main menu." choice
-        return
+    if [ -n "$old_name" ]; then
+        # Check if the file exists in the specified folder
+        if [ ! -f "$folder/$old_name" ]; then
+            zenity --error --text="File '$old_name' does not exist in the folder '$folder'."
+            return
+        fi
+        
+        # Prompt the user to enter the new file name
+        new_name=$(zenity --entry --title="Rename File" --text="Enter the new name for the file '$old_name':")
+        
+        if [ -n "$new_name" ]; then
+            # Rename the file
+            mv "$folder/$old_name" "$folder/$new_name"
+            zenity --info --text="File '$old_name' has been renamed to '$new_name'."
+        else
+            zenity --error --text="No new name entered for the file."
+        fi
+    else
+        zenity --error --text="No file name entered."
     fi
-    
-    # Prompt the user to enter the new file name
-    read -p "Enter the new name for the file '$old_name': " new_name
-    
-    # Rename the file
-    mv "$folder/$old_name" "$folder/$new_name"
-    
-    echo "File '$old_name' has been renamed to '$new_name'."
-    read -p "Press enter to return to the main menu." choice
 }
 
 
-
-# Function to delete files
 # Function to delete files or folders
 delete_files() {
     folder="$1"
-    
-    clear
-    echo "Delete Options:"
-    echo "1. Delete File"
-    echo "2. Delete Folder"
-    read -p "Enter your choice (1-2): " choice
+
+    # Display the delete options
+    choice=$(zenity --list --title="Delete Options" --text="Select an option to delete:" \
+        --column="Option" --column="Description" \
+        1 "Delete File" \
+        2 "Delete Folder")
     
     case $choice in
-        1) delete_file "$folder" ;;
-        2) delete_folder "$folder" ;;
-        *) echo "Invalid choice. Please enter a number between 1 and 2." ;;
+        "Delete File") delete_file "$folder" ;;
+        "Delete Folder") delete_folder "$folder" ;;
+        *) zenity --error --text="Invalid choice." ;;
     esac
 }
+
 
 # Function to delete a file
 delete_file() {
     folder="$1"
+
+    # Prompt the user to select the file to delete
+    file_name=$(zenity --file-selection --title="Select File to Delete")
     
-    # Prompt the user to enter the file to delete
-    read -p "Enter the file to delete: " file_name
-    
-    # Check if the file exists in the specified folder
-    if [ ! -f "$folder/$file_name" ]; then
-        echo "File '$file_name' does not exist in the folder '$folder'."
-        read -p "Press enter to return to the main menu." choice
-        return
+    if [ -n "$file_name" ]; then
+        # Check if the selected file exists
+        if [ -f "$file_name" ]; then
+            # Delete the file
+            rm "$file_name"
+            zenity --info --text="File '$file_name' has been deleted."
+        else
+            zenity --error --text="File '$file_name' does not exist."
+        fi
+    else
+        zenity --error --text="No file selected for deletion."
     fi
-    
-    # Delete the file
-    rm "$folder/$file_name"
-    
-    echo "File '$file_name' has been deleted."
-    read -p "Press enter to return to the main menu." choice
 }
+
 
 # Function to delete a folder
 delete_folder() {
     folder="$1"
+
+    # Prompt the user to select the folder to delete
+    folder_name=$(zenity --file-selection --title="Select Folder to Delete" --directory)
     
-    # Prompt the user to enter the folder to delete
-    read -p "Enter the folder to delete: " folder_name
-    
-    # Check if the folder exists in the specified directory
-    if [ ! -d "$folder/$folder_name" ]; then
-        echo "Folder '$folder_name' does not exist in the directory '$folder'."
-        read -p "Press enter to return to the main menu." choice
-        return
+    if [ -n "$folder_name" ]; then
+        # Check if the selected folder exists
+        if [ -d "$folder_name" ]; then
+            # Delete the folder and its contents recursively
+            rm -r "$folder_name"
+            zenity --info --text="Folder '$folder_name' and its contents have been deleted."
+        else
+            zenity --error --text="Folder '$folder_name' does not exist."
+        fi
+    else
+        zenity --error --text="No folder selected for deletion."
     fi
-    
-    # Delete the folder and its contents recursively
-    rm -r "$folder/$folder_name"
-    
-    echo "Folder '$folder_name' and its contents have been deleted."
-    read -p "Press enter to return to the main menu." choice
 }
+
 
 
 # Function to sort files
 sort_files() {
     folder="$1"
-    
-    clear
-    echo "Sorting Options:"
-    echo "1. Sort by Name"
-    echo "2. Sort by Size"
-    echo "3. Sort by Modification Time"
-    echo "4. Sort by File Type"
-    echo "5. Cancel and return to the main menu"
-    read -p "Enter your choice (1-5): " choice
+
+    # Display the sorting options
+    choice=$(zenity --list --title="Sorting Options" --text="Select an option to sort files:" \
+        --column="Option" --column="Description" \
+        1 "Sort by Name" \
+        2 "Sort by Size" \
+        3 "Sort by Modification Time" \
+        4 "Sort by File Type" \
+        5 "Cancel and return to the main menu")
     
     case $choice in
-        1) sort_by_name "$folder" ;;
-        2) sort_by_size "$folder" ;;
-        3) sort_by_modification_time "$folder" ;;
-        4) sort_by_file_type "$folder" ;;
-        5) return ;;
-        *) echo "Invalid choice. Please enter a number between 1 and 5." ;;
+        "Sort by Name") sort_by_name "$folder" ;;
+        "Sort by Size") sort_by_size "$folder" ;;
+        "Sort by Modification Time") sort_by_modification_time "$folder" ;;
+        "Sort by File Type") sort_by_file_type "$folder" ;;
+        *) zenity --error --text="Invalid choice." ;;
     esac
 }
+
 
 # Function to sort files by name
 sort_by_name() {
     folder="$1"
-    
+
     # Sort files by name
-    echo "Sorting files in folder '$folder' by name..."
-    ls -l "$folder" | sort -k 9
-    read -p "Press enter to return to the main menu." choice
+    sorted_files=$(ls -l "$folder" | sort -k 9)
+    
+    # Display the sorted files using zenity
+    zenity --text-info --title="Sorted Files (by Name)" --width=800 --height=600 --filename=- <<<"$sorted_files"
 }
+
 
 # Function to sort files by size
 sort_by_size() {
     folder="$1"
-    
+
     # Sort files by size
-    echo "Sorting files in folder '$folder' by size..."
-    ls -lSh "$folder"
-    read -p "Press enter to return to the main menu." choice
+    sorted_files=$(ls -lSh "$folder")
+    
+    # Display the sorted files using zenity
+    zenity --text-info --title="Sorted Files (by Size)" --width=800 --height=600 --filename=- <<<"$sorted_files"
 }
+
 
 # Function to sort files by modification time
 sort_by_modification_time() {
     folder="$1"
-    
+
     # Sort files by modification time
-    echo "Sorting files in folder '$folder' by modification time..."
-    ls -lt "$folder"
-    read -p "Press enter to return to the main menu." choice
+    sorted_files=$(ls -lt "$folder")
+    
+    # Display the sorted files using zenity
+    zenity --text-info --title="Sorted Files (by Modification Time)" --width=800 --height=600 --filename=- <<<"$sorted_files"
 }
+
 
 # Function to sort files by file type
 sort_by_file_type() {
@@ -393,8 +417,6 @@ sort_by_file_type() {
     ls -l --group-directories-first "$folder"
     read -p "Press enter to return to the main menu." choice
 }
-
-
 
 # Function for system monitor
 system_monitor() {
@@ -431,56 +453,53 @@ system_monitor() {
     fi
 
     while true; do
-        clear
-        echo "System Monitor"
-        echo "1. View CPU and Memory usage"
-        echo "2. View Disk I/O statistics"
-        echo "3. View Disk usage"
-        echo "4. View Network statistics"
-        echo "5. View Active TCP connections"
-        echo "6. View Open ports"
-        echo "7. View System uptime"
-        echo "8. Return to the main menu"
-        
-        read -p "Enter your choice (1-8): " choice
+        choice=$(zenity --list --title="System Monitor" --text="Choose an option:" \
+            --column="Option" --column="Description" \
+            "View CPU and Memory usage" "Display CPU and Memory usage" \
+            "View Disk I/O statistics" "Display Disk I/O statistics" \
+            "View Disk usage" "Display Disk usage" \
+            "View Network statistics" "Display Network statistics" \
+            "View Active TCP connections" "Display Active TCP connections" \
+            "View Open ports" "Display Open ports" \
+            "View System uptime" "Display System uptime" \
+            "Return to the main menu" "Return to the main menu")
+
         case $choice in
-            1) 
+            "View CPU and Memory usage")
                 echo "CPU and Memory usage:"
-                top -b -n 1 | head -n 20
+                top -b -n 1 | head -n 20 | zenity --text-info --title="CPU and Memory usage" --width=800 --height=600
                 ;;
-            2) 
+            "View Disk I/O statistics")
                 echo "Disk I/O statistics:"
-                iostat -dx 1 5
+                iostat -dx 1 5 | zenity --text-info --title="Disk I/O statistics" --width=800 --height=600
                 ;;
-            3) 
+            "View Disk usage")
                 echo "Disk usage:"
-                df -h
+                df -h | zenity --text-info --title="Disk usage" --width=800 --height=600
                 ;;
-            4) 
+            "View Network statistics")
                 echo "Network statistics:"
-                netstat -i
+                netstat -i | zenity --text-info --title="Network statistics" --width=800 --height=600
                 ;;
-            5) 
+            "View Active TCP connections")
                 echo "Active TCP connections:"
-                netstat -tuln
+                netstat -tuln | zenity --text-info --title="Active TCP connections" --width=800 --height=600
                 ;;
-            6)
+            "View Open ports")
                 echo "Open ports:"
-                netstat -tuln | grep LISTEN
+                netstat -tuln | grep LISTEN | zenity --text-info --title="Open ports" --width=800 --height=600
                 ;;
-            7)
+            "View System uptime")
                 echo "System uptime:"
-                uptime
+                uptime | zenity --text-info --title="System uptime" --width=800 --height=600
                 ;;
-            8) return ;;
-            *) echo "Invalid choice. Please enter a number between 1 and 8." ;;
+            "Return to the main menu") return ;;
+            *) echo "Invalid choice. Please choose a valid option." ;;
         esac
-        
-        read -p "Press enter to continue." choice
     done
 }
 
-# Function for backup
+
 # Directory to store backups
 BACKUP_DIR="$HOME/backups"
 
@@ -490,12 +509,11 @@ create_backup() {
     echo "Create Backup"
     
     # Prompt the user for the directory to back up
-    read -p "Enter the directory to back up: " source_dir
+    source_dir=$(zenity --entry --title="Create Backup" --text="Enter the directory to back up:")
     
     # Check if the directory exists
     if [ ! -d "$source_dir" ]; then
-        echo "Directory '$source_dir' does not exist."
-        read -p "Press enter to return to the backup menu." choice
+        zenity --error --title="Error" --text="Directory '$source_dir' does not exist."
         return
     fi
     
@@ -505,11 +523,11 @@ create_backup() {
     # Create the backup
     timestamp=$(date +%Y%m%d%H%M%S)
     backup_file="$BACKUP_DIR/backup_$timestamp.tar.gz"
-    tar -czvf "$backup_file" "$source_dir"
+    tar -czvf "$backup_file" "$source_dir" 2>/dev/null
     
-    echo "Backup of '$source_dir' created at '$backup_file'."
-    read -p "Press enter to return to the backup menu." choice
+    zenity --info --title="Backup Created" --text="Backup of '$source_dir' created at '$backup_file'."
 }
+
 
 # Function to restore a backup
 restore_backup() {
@@ -518,38 +536,55 @@ restore_backup() {
     
     # List available backups
     echo "Available backups:"
-    ls "$BACKUP_DIR"/backup_*.tar.gz
+    backups=$(ls "$BACKUP_DIR"/backup_*.tar.gz)
     
-    # Prompt the user for the backup file to restore
-    read -p "Enter the backup file to restore (e.g., backup_20240101123045.tar.gz): " backup_file
+    # Check if there are any backups
+    if [ -z "$backups" ]; then
+        zenity --error --title="Error" --text="No backups found in '$BACKUP_DIR'."
+        return
+    fi
     
-    # Check if the backup file exists
-    if [ ! -f "$BACKUP_DIR/$backup_file" ]; then
-        echo "Backup file '$backup_file' does not exist."
-        read -p "Press enter to return to the backup menu." choice
+    # Prompt the user to select a backup file
+    backup_file=$(zenity --list --title="Restore Backup" --text="Select the backup file to restore:" --column="Backup Files" $backups)
+    
+    # Check if the user cancelled the operation
+    if [ -z "$backup_file" ]; then
         return
     fi
     
     # Prompt the user for the restore directory
-    read -p "Enter the directory to restore to: " restore_dir
+    restore_dir=$(zenity --file-selection --directory --title="Select Restore Directory")
+    
+    # Check if the user cancelled the operation
+    if [ -z "$restore_dir" ]; then
+        return
+    fi
     
     # Create the restore directory if it doesn't exist
     mkdir -p "$restore_dir"
     
     # Restore the backup
-    tar -xzvf "$BACKUP_DIR/$backup_file" -C "$restore_dir"
+    tar -xzvf "$BACKUP_DIR/$backup_file" -C "$restore_dir" 2>/dev/null
     
-    echo "Backup '$backup_file' restored to '$restore_dir'."
-    read -p "Press enter to return to the backup menu." choice
+    zenity --info --title="Backup Restored" --text="Backup '$backup_file' restored to '$restore_dir'."
 }
+
 
 # Function to list available backups
 list_backups() {
     clear
     echo "List of Available Backups:"
-    ls "$BACKUP_DIR"/backup_*.tar.gz
+    backups=$(ls "$BACKUP_DIR"/backup_*.tar.gz)
+    
+    if [ -z "$backups" ]; then
+        zenity --info --title="No Backups" --text="No backups found in '$BACKUP_DIR'."
+    else
+        zenity --list --title="Available Backups" --column="Backups" $backups
+    fi
+    
     read -p "Press enter to return to the backup menu." choice
 }
+
 
 # Function for backup menu
 backup() {
@@ -567,10 +602,11 @@ backup() {
             2) restore_backup ;;
             3) list_backups ;;
             4) return ;;
-            *) echo "Invalid choice. Please enter a number between 1 and 4." ;;
+            *) zenity --error --title="Invalid Choice" --text="Please enter a number between 1 and 4." ;;
         esac
     done
 }
+
 
 
 # Function for password manager
@@ -579,15 +615,29 @@ PASSPHRASE="my_secret_passphrase"
 
 # Function to encrypt a password
 encrypt_password() {
-    local password="$1"
-    echo -n "$password" | openssl enc -aes-256-cbc -pbkdf2 -pass pass:"$PASSPHRASE"
+    local password
+    password=$(zenity --password --title="Enter Password" --width=400 --height=200)
+    if [ -z "$password" ]; then
+        zenity --error --title="Error" --text="No password entered."
+        return 1
+    else
+        echo -n "$password" | openssl enc -aes-256-cbc -pbkdf2 -pass pass:"$PASSPHRASE"
+    fi
 }
+
 
 # Function to decrypt a password
 decrypt_password() {
-    local encrypted_password="$1"
-    echo -n "$encrypted_password" | openssl enc -d -aes-256-cbc -pbkdf2 -pass pass:"$PASSPHRASE"
+    local encrypted_password
+    encrypted_password=$(zenity --password --title="Enter Passphrase" --width=400 --height=200)
+    if [ -z "$encrypted_password" ]; then
+        zenity --error --title="Error" --text="No passphrase entered."
+        return 1
+    else
+        echo -n "$1" | openssl enc -d -aes-256-cbc -pbkdf2 -pass pass:"$encrypted_password"
+    fi
 }
+
 
 
 # Function to add a password
@@ -595,17 +645,33 @@ add_password() {
     clear
     echo "Add Password"
     
-    read -p "Enter the service name: " service
-    read -p "Enter the username: " username
-    read -sp "Enter the password: " password
-    echo
+    # Prompt the user for the service name
+    service=$(zenity --entry --title="Add Password" --text="Enter the service name:")
+    if [ -z "$service" ]; then
+        zenity --error --title="Error" --text="Service name cannot be empty."
+        return
+    fi
+    
+    # Prompt the user for the username
+    username=$(zenity --entry --title="Add Password" --text="Enter the username:")
+    if [ -z "$username" ]; then
+        zenity --error --title="Error" --text="Username cannot be empty."
+        return
+    fi
+    
+    # Prompt the user for the password
+    password=$(zenity --password --title="Add Password" --width=400 --height=200)
+    if [ -z "$password" ]; then
+        zenity --error --title="Error" --text="Password cannot be empty."
+        return
+    fi
     
     encrypted_password=$(encrypt_password "$password")
     echo "$service:$username:$encrypted_password" >> "$PASSWORD_FILE"
     
-    echo "Password added for $service."
-    read -p "Press enter to return to the password manager menu." choice
+    zenity --info --title="Password Added" --text="Password added for $service."
 }
+
 
 # Function to view passwords
 view_passwords() {
@@ -613,18 +679,19 @@ view_passwords() {
     echo "View Passwords"
     
     if [ ! -f "$PASSWORD_FILE" ]; then
-        echo "No passwords saved."
+        zenity --info --title="View Passwords" --text="No passwords saved."
     else
+        passwords_text=""
+
         while IFS=: read -r service username encrypted_password; do
             decrypted_password=$(decrypt_password "$encrypted_password")
-            echo "Service: $service"
-            echo "Username: $username"
-            echo "Password: $decrypted_password"
-            echo
+            passwords_text+="Service: $service\n"
+            passwords_text+="Username: $username\n"
+            passwords_text+="Password: $decrypted_password\n\n"
         done < "$PASSWORD_FILE"
+
+        zenity --text-info --title="View Passwords" --width=600 --height=400 --filename=- <<< "$passwords_text"
     fi
-    
-    read -p "Press enter to return to the password manager menu." choice
 }
 
 
@@ -633,10 +700,16 @@ delete_password() {
     clear
     echo "Delete Password"
     
-    read -p "Enter the service name to delete: " service
+    # Prompt the user to enter the service name to delete
+    service=$(zenity --entry --title="Delete Password" --text="Enter the service name to delete:" --width=300 --height=100)
+    
+    if [ -z "$service" ]; then
+        # If the user cancels or leaves the input empty, return
+        return
+    fi
     
     if [ ! -f "$PASSWORD_FILE" ]; then
-        echo "No passwords saved."
+        zenity --info --title="Delete Password" --text="No passwords saved."
     else
         # Temporarily filter out the service name from the password file and overwrite the original file
         grep -v "^$service:" "$PASSWORD_FILE" > "$PASSWORD_FILE.tmp"
@@ -644,16 +717,12 @@ delete_password() {
         
         # Check if any lines were deleted
         if [ "$(wc -l < "$PASSWORD_FILE")" -lt "$(wc -l < "$PASSWORD_FILE.tmp")" ]; then
-            echo "Password for $service deleted."
+            zenity --info --title="Delete Password" --text="Password for $service deleted."
         else
-            echo "No password found for $service."
+            zenity --info --title="Delete Password" --text="No password found for $service."
         fi
     fi
-    
-    read -p "Press enter to return to the password manager menu." choice
 }
-
-
 
 
 # Function to update a password
@@ -661,313 +730,688 @@ update_password() {
     clear
     echo "Update Password"
     
-    read -p "Enter the service name to update: " service
+    # Prompt the user to enter the service name to update
+    service=$(zenity --entry --title="Update Password" --text="Enter the service name to update:" --width=300 --height=100)
+    
+    if [ -z "$service" ]; then
+        # If the user cancels or leaves the input empty, return
+        return
+    fi
     
     if grep -q "^$service:" "$PASSWORD_FILE"; then
-        read -p "Enter the new username: " new_username
-        read -sp "Enter the new password: " new_password
-        echo
+        # Prompt the user to enter the new username
+        new_username=$(zenity --entry --title="Update Password" --text="Enter the new username:" --width=300 --height=100)
+        
+        # Prompt the user to enter the new password
+        new_password=$(zenity --password --title="Update Password" --text="Enter the new password:" --width=300 --height=100)
+        
+        if [ -z "$new_username" ] || [ -z "$new_password" ]; then
+            # If the user cancels or leaves any input empty, return
+            return
+        fi
         
         encrypted_password=$(encrypt_password "$new_password")
         grep -v "^$service:" "$PASSWORD_FILE" > "$PASSWORD_FILE.tmp"
         echo "$service:$new_username:$encrypted_password" >> "$PASSWORD_FILE.tmp"
         mv "$PASSWORD_FILE.tmp" "$PASSWORD_FILE"
         
-        echo "Password for $service updated."
+        zenity --info --title="Update Password" --text="Password for $service updated."
     else
-        echo "No password found for $service."
+        zenity --info --title="Update Password" --text="No password found for $service."
     fi
     
     read -p "Press enter to return to the password manager menu." choice
 }
 
+
 # Function for password manager menu
 password_manager() {
     while true; do
         clear
-        echo "Password Manager"
-        echo "1. Add Password"
-        echo "2. View Passwords"
-        echo "3. Delete Password"
-        echo "4. Update Password"
-        echo "5. Return to the main menu"
+        choice=$(zenity --list --title="Password Manager" --text="Choose an option:" --column="Option" "Add Password" "View Passwords" "Delete Password" "Update Password" "Return to Main Menu" --width=300 --height=300 --cancel-label="Return to Main Menu")
         
-        read -p "Enter your choice (1-5): " choice
         case $choice in
-            1) add_password ;;
-            2) view_passwords ;;
-            3) delete_password ;;
-            4) update_password ;;
-            5) return ;;
-            *) echo "Invalid choice. Please enter a number between 1 and 5." ;;
+            "Add Password")
+                add_password
+                ;;
+            "View Passwords")
+                view_passwords
+                ;;
+            "Delete Password")
+                delete_password
+                ;;
+            "Update Password")
+                update_password
+                ;;
+            "Return to Main Menu")
+                return
+                ;;
+            *)
+                zenity --error --text="Invalid choice. Please select a valid option."
+                ;;
         esac
     done
 }
 
 
-# Function for network utilities
 # Function to display network interfaces
 display_network_interfaces() {
-    echo "Network Interfaces:"
-    ip addr show
+    network_info=$(ip addr show)
+    zenity --text-info --title="Network Interfaces" --width=600 --height=400 --filename=<(echo "$network_info")
 }
+
 
 # Function to ping a host
 ping_host() {
-    read -p "Enter the host to ping: " host
-    echo "Pinging $host..."
-    ping_result=$(ping -c 4 "$host")  # Send 4 ICMP echo request packets and capture output
-    echo "$ping_result"  # Display the output of ping
+    host=$(zenity --entry --title="Ping Host" --text="Enter the host to ping:")
+    if [ -n "$host" ]; then
+        ping_result=$(ping -c 4 "$host")  # Send 4 ICMP echo request packets and capture output
+        zenity --info --title="Ping Result" --width=600 --height=400 --text="$ping_result"
+    else
+        zenity --error --title="Error" --text="No host entered."
+    fi
 }
+
 
 
 # Function to traceroute to a destination
 traceroute_destination() {
-    read -p "Enter the destination to traceroute: " destination
-    traceroute "$destination"
+    destination=$(zenity --entry --title="Traceroute Destination" --text="Enter the destination to traceroute:")
+    if [ -n "$destination" ]; then
+        traceroute_result=$(traceroute "$destination")  # Perform traceroute and capture output
+        zenity --text-info --title="Traceroute Result" --width=600 --height=400 --text="$traceroute_result"
+    else
+        zenity --error --title="Error" --text="No destination entered."
+    fi
 }
+
 
 # Function to perform DNS lookup
 dns_lookup() {
-    read -p "Enter the domain name or IP address to lookup: " target
-    nslookup "$target"
+    target=$(zenity --entry --title="DNS Lookup" --text="Enter the domain name or IP address to lookup:")
+    if [ -n "$target" ]; then
+        nslookup_result=$(nslookup "$target")  # Perform DNS lookup and capture output
+        zenity --text-info --title="DNS Lookup Result" --width=600 --height=400 --text="$nslookup_result"
+    else
+        zenity --error --title="Error" --text="No target entered."
+    fi
 }
+
 
 # Function to display netstat information
 show_netstat() {
-    echo "Netstat Information:"
-    netstat -tuln  # Display TCP and UDP listening ports
+    netstat_info=$(netstat -tuln)  # Retrieve netstat information
+    zenity --text-info --title="Netstat Information" --width=600 --height=400 --text="$netstat_info"
 }
+
 
 # Function to monitor network bandwidth
 monitor_bandwidth() {
-    sudo iftop  # Monitor network bandwidth usage
+    bandwidth_info=$(sudo iftop -t -s 1 -L 10)  # Monitor network bandwidth usage for 10 seconds
+    zenity --text-info --title="Bandwidth Monitor" --width=800 --height=600 --text="$bandwidth_info"
 }
+
 
 # Function for network utilities
 network_utilities() {
     while true; do
-        clear
-        echo "Network Utilities"
-        echo "1. Display Network Interfaces"
-        echo "2. Ping"
-        echo "3. Traceroute"
-        echo "4. DNS Lookup"
-        echo "5. Netstat"
-        echo "6. Bandwidth Monitoring"
-        echo "7. Return to the main menu"
-        
-        read -p "Enter your choice (1-7): " choice
+        choice=$(zenity --list --title="Network Utilities" \
+            --width=600 --height=800 \
+            --column="Option" --column="Description" \
+            "Display Network Interfaces" "View network interfaces" \
+            "Ping" "Ping a host" \
+            "Traceroute" "Traceroute to a destination" \
+            "DNS Lookup" "Perform a DNS lookup" \
+            "Netstat" "Display network statistics" \
+            "Bandwidth Monitoring" "Monitor network bandwidth" \
+            "Return to Main Menu" "Return to the main menu")
+
         case $choice in
-            1) display_network_interfaces ;;
-            2) ping_host ;;
-            3) traceroute_destination ;;
-            4) dns_lookup ;;
-            5) show_netstat ;;
-            6) monitor_bandwidth ;;
-            7) return ;;
-            *) echo "Invalid choice. Please enter a number between 1 and 7." ;;
+            "Display Network Interfaces") display_network_interfaces ;;
+            "Ping") ping_host ;;
+            "Traceroute") traceroute_destination ;;
+            "DNS Lookup") dns_lookup ;;
+            "Netstat") show_netstat ;;
+            "Bandwidth Monitoring") monitor_bandwidth ;;
+            "Return to Main Menu") return ;;
+            *) echo "Invalid choice. Please try again." ;;
         esac
-        
-        read -p "Press enter to continue." choice
     done
 }
 
 
-
-# Function for text manipulation
 # Function for text manipulation
 text_manipulation() {
     while true; do
-        clear
-        echo "Text Manipulation"
-        echo "1. Search for a pattern in a file"
-        echo "2. Replace a pattern in a file"
-        echo "3. Convert text to lowercase"
-        echo "4. Convert text to uppercase"
-        echo "5. Sort lines in a file"
-        echo "6. Return to the main menu"
-        
-        read -p "Enter your choice (1-6): " choice
+        choice=$(zenity --list \
+            --title="Text Manipulation" \
+            --text="Choose an option:" \
+            --column="Option" \
+            "Search for a pattern in a file" \
+            "Replace a pattern in a file" \
+            "Convert text to lowercase" \
+            "Convert text to uppercase" \
+            "Sort lines in a file" \
+            "Return to the main menu")
+
         case $choice in
-            1) search_pattern ;;
-            2) replace_pattern ;;
-            3) convert_to_lowercase ;;
-            4) convert_to_uppercase ;;
-            5) sort_lines ;;
-            6) return ;;
-            *) echo "Invalid choice. Please enter a number between 1 and 6." ;;
+            "Search for a pattern in a file") search_pattern ;;
+            "Replace a pattern in a file") replace_pattern ;;
+            "Convert text to lowercase") convert_to_lowercase ;;
+            "Convert text to uppercase") convert_to_uppercase ;;
+            "Sort lines in a file") sort_lines ;;
+            "Return to the main menu") return ;;
+            *) echo "Invalid choice. Please select an option." ;;
         esac
         
-        read -p "Press enter to continue." choice
+        zenity --question --text="Do you want to continue?" --title="Continue" || break
     done
 }
 
+
 # Function to search for a pattern in a file
 search_pattern() {
-    clear
-    read -p "Enter the pattern to search for: " pattern
-    read -p "Enter the file to search in: " filename
-    grep "$pattern" "$filename"
+    pattern=$(zenity --entry --title="Search Pattern" --text="Enter the pattern to search for:")
+    filename=$(zenity --file-selection --title="Select File" --filename="$HOME")
+
+    if [ -n "$pattern" ] && [ -n "$filename" ]; then
+        result=$(grep "$pattern" "$filename")
+        zenity --info --title="Search Result" --text="$result"
+    else
+        zenity --error --title="Error" --text="Pattern or file not provided."
+    fi
 }
+
 
 # Function to replace a pattern in a file
 replace_pattern() {
-    clear
-    read -p "Enter the pattern to replace: " old_pattern
-    read -p "Enter the new pattern: " new_pattern
-    read -p "Enter the file to perform replacement in: " filename
-    sed -i "s/$old_pattern/$new_pattern/g" "$filename"
-    echo "Pattern replaced in $filename"
+    old_pattern=$(zenity --entry --title="Replace Pattern" --text="Enter the pattern to replace:")
+    new_pattern=$(zenity --entry --title="Replace Pattern" --text="Enter the new pattern:")
+    filename=$(zenity --file-selection --title="Select File" --filename="$HOME")
+
+    if [ -n "$old_pattern" ] && [ -n "$new_pattern" ] && [ -n "$filename" ]; then
+        sed -i "s/$old_pattern/$new_pattern/g" "$filename"
+        zenity --info --title="Replacement Complete" --text="Pattern replaced in $filename"
+    else
+        zenity --error --title="Error" --text="Pattern or file not provided."
+    fi
 }
+
 
 # Function to convert text to lowercase
 convert_to_lowercase() {
-    clear
-    read -p "Enter the text to convert to lowercase: " text
-    echo "$text" | tr '[:upper:]' '[:lower:]'
+    text=$(zenity --entry --title="Convert to Lowercase" --text="Enter the text to convert to lowercase:")
+    
+    if [ -n "$text" ]; then
+        result=$(echo "$text" | tr '[:upper:]' '[:lower:]')
+        zenity --info --title="Conversion Complete" --text="Converted text:\n$result"
+    else
+        zenity --error --title="Error" --text="No text provided."
+    fi
 }
+
 
 # Function to convert text to uppercase
 convert_to_uppercase() {
-    clear
-    read -p "Enter the text to convert to uppercase: " text
-    echo "$text" | tr '[:lower:]' '[:upper:]'
+    text=$(zenity --entry --title="Convert to Uppercase" --text="Enter the text to convert to uppercase:")
+    
+    if [ -n "$text" ]; then
+        result=$(echo "$text" | tr '[:lower:]' '[:upper:]')
+        zenity --info --title="Conversion Complete" --text="Converted text:\n$result"
+    else
+        zenity --error --title="Error" --text="No text provided."
+    fi
 }
+
 
 # Function to sort lines in a file
 sort_lines() {
-    clear
-    read -p "Enter the file to sort lines in: " filename
-    sort "$filename"
+    filename=$(zenity --file-selection --title="Select File to Sort Lines In")
+    
+    if [ -n "$filename" ]; then
+        sorted_content=$(sort "$filename")
+        zenity --text-info --title="Sorted Lines" --width=600 --height=400 --filename="$filename" --editable
+    else
+        zenity --error --title="Error" --text="No file selected."
+    fi
 }
 
 
-# Function for package management
 # Function for package management
 package_management() {
     while true; do
         clear
-        echo "Package Management"
-        echo "1. Install a package"
-        echo "2. Update installed packages"
-        echo "3. Remove a package"
-        echo "4. Search for a package"
-        echo "5. List installed packages"
-        echo "6. Return to the main menu"
+        choice=$(zenity --list --title="Package Management" --text="Select an option:" --column="Option" "Install a package" "Update installed packages" "Remove a package" "Search for a package" "List installed packages" "Return to the main menu")
         
-        read -p "Enter your choice (1-6): " choice
         case $choice in
-            1) install_package ;;
-            2) update_packages ;;
-            3) remove_package ;;
-            4) search_package ;;
-            5) list_installed_packages ;;
-            6) return ;;
-            *) echo "Invalid choice. Please enter a number between 1 and 6." ;;
+            "Install a package") install_package ;;
+            "Update installed packages") update_packages ;;
+            "Remove a package") remove_package ;;
+            "Search for a package") search_package ;;
+            "List installed packages") list_installed_packages ;;
+            "Return to the main menu") return ;;
+            *) zenity --error --text="Invalid choice. Please select a valid option." ;;
         esac
-        
-        read -p "Press enter to continue." choice
     done
 }
+
 
 # Function to install a package
 install_package() {
     clear
-    read -p "Enter the name of the package to install: " package_name
-    # Use the package manager's install command (e.g., apt, yum, etc.) to install the package
-    # For example, on Ubuntu:
-    sudo apt install "$package_name"
+    package_name=$(zenity --entry --title="Install Package" --text="Enter the name of the package to install:")
+    
+    if [ -n "$package_name" ]; then
+        # Use the package manager's install command (e.g., apt, yum, etc.) to install the package
+        # For example, on Ubuntu:
+        sudo apt install "$package_name"
+        zenity --info --text="Package '$package_name' installed successfully."
+    else
+        zenity --error --text="Package name cannot be empty."
+    fi
 }
+
 
 # Function to update installed packages
 update_packages() {
     clear
+    # Display a message informing the user that the packages are being updated
+    zenity --info --text="Updating installed packages..."
+
     # Use the package manager's update command to update installed packages
     # For example, on Ubuntu:
     sudo apt update && sudo apt upgrade
+
+    # Display a message indicating that the update process is complete
+    zenity --info --text="Packages have been successfully updated."
 }
+
 
 # Function to remove a package
 remove_package() {
     clear
-    read -p "Enter the name of the package to remove: " package_name
-    # Use the package manager's remove command (e.g., apt, yum, etc.) to remove the package
+    # Prompt the user to enter the name of the package to remove
+    package_name=$(zenity --entry --title="Remove Package" --text="Enter the name of the package to remove:")
+    
+    # Check if the user entered a package name
+    if [ -z "$package_name" ]; then
+        # Display an error message if no package name is provided
+        zenity --error --text="Package name cannot be empty. Please enter a valid package name."
+        return
+    fi
+    
+    # Use the package manager's remove command to uninstall the package
     # For example, on Ubuntu:
     sudo apt remove "$package_name"
+    
+    # Display a message indicating that the package has been removed
+    zenity --info --text="Package '$package_name' has been successfully removed."
 }
+
 
 # Function to search for a package
 search_package() {
     clear
-    read -p "Enter the name of the package to search for: " package_name
+    # Prompt the user to enter the name of the package to search for
+    package_name=$(zenity --entry --title="Search Package" --text="Enter the name of the package to search for:")
+    
+    # Check if the user entered a package name
+    if [ -z "$package_name" ]; then
+        # Display an error message if no package name is provided
+        zenity --error --text="Package name cannot be empty. Please enter a valid package name."
+        return
+    fi
+    
     # Use the package manager's search command to search for the package
     # For example, on Ubuntu:
-    apt search "$package_name"
+    apt search "$package_name" | zenity --text-info --width=600 --height=400 --title="Search Results for $package_name"
 }
+
 
 # Function to list installed packages
 list_installed_packages() {
     clear
     # Use the package manager's list command to list installed packages
     # For example, on Ubuntu:
-    dpkg -l
+    installed_packages=$(dpkg -l)
+    
+    # Display the installed packages using Zenity
+    zenity --text-info --width=800 --height=600 --title="Installed Packages" --editable --filename=<(echo "$installed_packages")
 }
 
-
-# Function for remote access
-remote_access() {
-    clear
-    echo "Remote Access"
-    # Implement remote access logic here
-    read -p "Press enter to return to the main menu." choice
-}
 
 # Function for user management
 user_management() {
-    clear
-    echo "User Management"
-    # Implement user management logic here
-    read -p "Press enter to return to the main menu." choice
+    while true; do
+        clear
+        option=$(zenity --list \
+            --title="User Management" \
+            --text="Choose an option:" \
+            --column="Option" \
+            "Add a user" \
+            "Delete a user" \
+            "List users" \
+            "Sort users by name" \
+            "Sort users by permission" \
+            "View all users' permissions" \
+            "View specific user's permissions" \
+            "Change user permissions" \
+            "Return to main menu")
+
+        case $option in
+            "Add a user")
+                username=$(zenity --entry --title="Add User" --text="Enter username to add:")
+                sudo useradd "$username" && zenity --info --text="User $username added successfully." || zenity --error --text="Failed to add user $username."
+                ;;
+            "Delete a user")
+                username=$(zenity --entry --title="Delete User" --text="Enter username to delete:")
+                sudo userdel -r "$username" && zenity --info --text="User $username deleted successfully." || zenity --error --text="Failed to delete user $username."
+                ;;
+            "List users")
+                users=$(cut -d: -f1 /etc/passwd)
+                zenity --info --title="Current users on the system" --text="$users"
+                ;;
+            "Sort users by name")
+                sorted_users=$(cut -d: -f1 /etc/passwd | sort)
+                zenity --info --title="Users sorted by name" --text="$sorted_users"
+                ;;
+            "Sort users by permission")
+                sorted_permissions=$(awk -F: '{print $1, $3}' /etc/passwd | sort -k2n)
+                zenity --info --title="Users sorted by permission (UID)" --text="$sorted_permissions"
+                ;;
+            "View all users' permissions")
+                all_permissions=$(awk -F: '{print "User:", $1, "UID:", $3, "GID:", $4, "Home Directory:", $6, "Shell:", $7}' /etc/passwd)
+                zenity --info --title="All users' permissions" --text="$all_permissions"
+                ;;
+            "View specific user's permissions")
+                username=$(zenity --entry --title="View User Permissions" --text="Enter username to view permissions:")
+                user_info=$(getent passwd "$username")
+                if [ -n "$user_info" ]; then
+                    IFS=: read -r _ _ uid gid _ home shell <<< "$user_info"
+                    permissions="User: $username\nUID: $uid\nGID: $gid\nHome Directory: $home\nShell: $shell"
+                    zenity --info --title="User Permissions" --text="$permissions"
+                else
+                    zenity --error --text="User $username does not exist."
+                fi
+                ;;
+            "Change user permissions")
+                username=$(zenity --entry --title="Change User Permissions" --text="Enter username to change permissions:")
+                uid=$(zenity --entry --title="Change User Permissions" --text="Enter new UID:")
+                gid=$(zenity --entry --title="Change User Permissions" --text="Enter new GID:")
+                sudo usermod -u "$uid" -g "$gid" "$username" && zenity --info --text="Permissions for user $username changed successfully." || zenity --error --text="Failed to change permissions for user $username."
+                ;;
+            "Return to main menu")
+                return
+                ;;
+            *)
+                zenity --error --text="Invalid option. Please choose a valid option."
+                ;;
+        esac
+    done
 }
+
+
+
 
 # Function for system maintenance
 system_maintenance() {
-    clear
-    echo "System Maintenance"
-    # Implement system maintenance logic here
-    read -p "Press enter to return to the main menu." choice
+    while true; do
+        choice=$(zenity --list --title="System Maintenance" --column="Options" \
+            "Update the system" "Clean up unused packages" "View running processes" \
+            "Reboot the system" "Check system load" "Check available updates" \
+            "Check system memory usage" "View system logs" "Return to main menu" --height=800 --width=600 --cancel-label="Cancel")
+        
+        case $choice in
+            "Update the system")
+                zenity --info --text="Updating the system..."
+                sudo apt update && sudo apt upgrade -y
+                zenity --info --text="System updated successfully."
+                ;;
+            "Clean up unused packages")
+                zenity --info --text="Cleaning up unused packages..."
+                sudo apt autoremove -y && sudo apt autoclean
+                zenity --info --text="Unused packages cleaned up successfully."
+                ;;
+            "View running processes")
+                zenity --info --text="Viewing running processes..."
+                ps aux | zenity --text-info --title="Running Processes"
+                ;;
+            "Reboot the system")
+                confirm=$(zenity --question --text="Are you sure you want to reboot the system?")
+                if [ "$confirm" = "TRUE" ]; then
+                    zenity --info --text="Rebooting the system..."
+                    sudo reboot
+                else
+                    zenity --info --text="Reboot cancelled."
+                fi
+                ;;
+            "Check system load")
+                zenity --info --text="Checking system load..."
+                uptime | zenity --text-info --title="System Load"
+                ;;
+            "Check available updates")
+                zenity --info --text="Checking available updates..."
+                sudo apt update
+                apt list --upgradable | zenity --text-info --title="Available Updates"
+                ;;
+            "Check system memory usage")
+                zenity --info --text="Checking system memory usage..."
+                free -h | zenity --text-info --title="System Memory Usage"
+                ;;
+            "View system logs")
+                zenity --info --text="Viewing system logs..."
+                sudo journalctl -xe | zenity --text-info --title="System Logs"
+                ;;
+            "Return to main menu")
+                return
+                ;;
+            *)
+                zenity --error --text="Invalid option. Please choose a valid option."
+                ;;
+        esac
+    done
 }
 
 # Function for software installation
 software_installation() {
-    clear
-    echo "Software Installation"
-    # Implement software installation logic here
-    read -p "Press enter to return to the main menu." choice
+    while true; do
+        choice=$(zenity --list --title="Software Installation" --text="Choose an option:" --column="Option" "Install a software package" "Search for available packages" "List installed packages" "Remove a software package" "Update package lists" "Upgrade installed packages" "Return to main menu" --height=800 --width=600 --cancel-label="Cancel")
+
+        case $choice in
+            "Install a software package")
+                package_name=$(zenity --entry --title="Install Package" --text="Enter the name of the package to install:")
+                if [ -n "$package_name" ]; then
+                    sudo apt install "$package_name" && zenity --info --title="Success" --text="Package $package_name installed successfully." || zenity --error --title="Error" --text="Failed to install package $package_name."
+                fi
+                ;;
+            "Search for available packages")
+                keyword=$(zenity --entry --title="Search Packages" --text="Enter the search keyword:")
+                if [ -n "$keyword" ]; then
+                    apt search "$keyword" | zenity --text-info --title="Search Results" --width=600 --height=400
+                fi
+                ;;
+            "List installed packages")
+                dpkg -l | zenity --text-info --title="Installed Packages" --width=800 --height=600
+                ;;
+            "Remove a software package")
+                package_name=$(zenity --entry --title="Remove Package" --text="Enter the name of the package to remove:")
+                if [ -n "$package_name" ]; then
+                    sudo apt remove "$package_name" && zenity --info --title="Success" --text="Package $package_name removed successfully." || zenity --error --title="Error" --text="Failed to remove package $package_name."
+                fi
+                ;;
+            "Update package lists")
+                sudo apt update && zenity --info --title="Success" --text="Package lists updated successfully."
+                ;;
+            "Upgrade installed packages")
+                sudo apt upgrade && zenity --info --title="Success" --text="Installed packages upgraded successfully."
+                ;;
+            "Return to main menu")
+                return
+                ;;
+            *) 
+                zenity --error --title="Error" --text="Invalid option. Please choose a valid option."
+                ;;
+        esac
+    done
 }
+
+
 
 # Function for disk management
 disk_management() {
-    clear
-    echo "Disk Management"
-    # Implement disk management logic here
-    read -p "Press enter to return to the main menu." choice
+    while true; do
+        choice=$(zenity --list --title="Disk Management" --text="Choose an option:" --column="Option" "View disk usage" "List partitions" "Format a partition" "Mount a partition" "Unmount a partition" "Return to main menu" --height=800 --width=600 --cancel-label="Cancel")
+
+        case $choice in
+            "View disk usage")
+                df -h | zenity --text-info --title="Disk Usage" --width=800 --height=600
+                ;;
+            "List partitions")
+                lsblk | zenity --text-info --title="List of Partitions" --width=800 --height=600
+                ;;
+            "Format a partition")
+                partition=$(zenity --entry --title="Format Partition" --text="Enter the partition to format (e.g., /dev/sdb1):")
+                if [ -n "$partition" ]; then
+                    sudo mkfs.ext4 "$partition" && zenity --info --title="Success" --text="Partition $partition formatted successfully." || zenity --error --title="Error" --text="Failed to format partition $partition."
+                fi
+                ;;
+            "Mount a partition")
+                partition=$(zenity --entry --title="Mount Partition" --text="Enter the partition to mount (e.g., /dev/sdb1):")
+                mount_point=$(zenity --entry --title="Mount Partition" --text="Enter the mount point:")
+                if [ -n "$partition" ] && [ -n "$mount_point" ]; then
+                    sudo mount "$partition" "$mount_point" && zenity --info --title="Success" --text="Partition $partition mounted at $mount_point." || zenity --error --title="Error" --text="Failed to mount partition $partition."
+                fi
+                ;;
+            "Unmount a partition")
+                partition=$(zenity --entry --title="Unmount Partition" --text="Enter the partition to unmount (e.g., /dev/sdb1):")
+                if [ -n "$partition" ]; then
+                    sudo umount "$partition" && zenity --info --title="Success" --text="Partition $partition unmounted successfully." || zenity --error --title="Error" --text="Failed to unmount partition $partition."
+                fi
+                ;;
+            "Return to main menu")
+                return
+                ;;
+            *) 
+                zenity --error --title="Error" --text="Invalid option. Please choose a valid option."
+                ;;
+        esac
+    done
 }
+
+
+
+
 
 # Function for system information
 system_information() {
-    clear
-    echo "System Information"
-    # Implement system information logic here
-    read -p "Press enter to return to the main menu." choice
+    while true; do
+        option=$(zenity --list --title="System Information" --text="Choose an option:" --column="Option" "Display system information" "Display CPU information" "Display memory information" "Display disk information" "Display network information" "Return to main menu" --height=800 --width=600 --cancel-label="Cancel")
+
+        case $option in
+            "Display system information")
+                uname -a | zenity --text-info --title="System Information" --width=800 --height=600
+                ;;
+            "Display CPU information")
+                lscpu | zenity --text-info --title="CPU Information" --width=800 --height=600
+                ;;
+            "Display memory information")
+                free -h | zenity --text-info --title="Memory Information" --width=800 --height=600
+                ;;
+            "Display disk information")
+                df -h | zenity --text-info --title="Disk Information" --width=800 --height=600
+                ;;
+            "Display network information")
+                ip addr show | zenity --text-info --title="Network Information" --width=800 --height=600
+                ;;
+            "Return to main menu")
+                return
+                ;;
+            *) 
+                zenity --error --title="Error" --text="Invalid option. Please choose a valid option."
+                ;;
+        esac
+    done
 }
+
+
+service_management() {
+    while true; do
+        option=$(zenity --list --title="Service Management" --text="Choose an option:" --column="Option" "Start a service" "Stop a service" "Restart a service" "Enable a service" "Disable a service" "Return to main menu" --height=800 --width=600 --cancel-label="Cancel")
+
+        case $option in
+            "Start a service")
+                service_name=$(zenity --entry --title="Start a Service" --text="Enter the name of the service to start:")
+                sudo systemctl start "$service_name" && zenity --info --title="Success" --text="Service $service_name started successfully." || zenity --error --title="Error" --text="Failed to start service $service_name."
+                ;;
+            "Stop a service")
+                service_name=$(zenity --entry --title="Stop a Service" --text="Enter the name of the service to stop:")
+                sudo systemctl stop "$service_name" && zenity --info --title="Success" --text="Service $service_name stopped successfully." || zenity --error --title="Error" --text="Failed to stop service $service_name."
+                ;;
+            "Restart a service")
+                service_name=$(zenity --entry --title="Restart a Service" --text="Enter the name of the service to restart:")
+                sudo systemctl restart "$service_name" && zenity --info --title="Success" --text="Service $service_name restarted successfully." || zenity --error --title="Error" --text="Failed to restart service $service_name."
+                ;;
+            "Enable a service")
+                service_name=$(zenity --entry --title="Enable a Service" --text="Enter the name of the service to enable:")
+                sudo systemctl enable "$service_name" && zenity --info --title="Success" --text="Service $service_name enabled successfully." || zenity --error --title="Error" --text="Failed to enable service $service_name."
+                ;;
+            "Disable a service")
+                service_name=$(zenity --entry --title="Disable a Service" --text="Enter the name of the service to disable:")
+                sudo systemctl disable "$service_name" && zenity --info --title="Success" --text="Service $service_name disabled successfully." || zenity --error --title="Error" --text="Failed to disable service $service_name."
+                ;;
+            "Return to main menu")
+                return
+                ;;
+            *) 
+                zenity --error --title="Error" --text="Invalid option. Please choose a valid option."
+                ;;
+        esac
+    done
+}
+
+
+system_benchmarking() {
+    while true; do
+        option=$(zenity --list --title="System Benchmarking" --text="Choose an option:" --column="Option" "CPU Benchmark" "Memory Benchmark" "Disk Benchmark" "Network Benchmark" "Return to main menu" --height=800 --width=600 --cancel-label="Cancel")
+
+        case $option in
+            "CPU Benchmark")
+                zenity --info --title="CPU Benchmark" --text="Running CPU benchmark...\nThis may take some time."
+                sysbench cpu --time=10 run | zenity --text-info --title="CPU Benchmark Result" --width=800 --height=600
+                ;;
+            "Memory Benchmark")
+                zenity --info --title="Memory Benchmark" --text="Running memory benchmark...\nThis may take some time."
+                sysbench memory --time=10 run | zenity --text-info --title="Memory Benchmark Result" --width=800 --height=600
+                ;;
+            "Disk Benchmark")
+                zenity --info --title="Disk Benchmark" --text="Running disk benchmark...\nThis may take some time."
+                sudo fio --name=randwrite --ioengine=posixaio --rw=randwrite --bs=4k --numjobs=4 --size=4G --runtime=60 --group_reporting | zenity --text-info --title="Disk Benchmark Result" --width=800 --height=600
+                ;;
+            "Network Benchmark")
+                zenity --info --title="Network Benchmark" --text="Running network benchmark...\nThis may take some time."
+                speedtest-cli | zenity --text-info --title="Network Benchmark Result" --width=800 --height=600
+                ;;
+            "Return to main menu")
+                return
+                ;;
+            *) 
+                zenity --error --title="Error" --text="Invalid option. Please choose a valid option."
+                ;;
+        esac
+    done
+}
+
+
 
 # Main function
 main() {
     while true; do
-        display_menu
-        read -p "Enter your choice (1-15): " choice
+        choice=$(display_menu)
+        if [ -z "$choice" ]; then
+            # Exit if the choice is empty (user clicked Cancel or closed the dialog)
+            exit
+        fi
+        
         case $choice in
             1) task_manager ;;
             2) file_organizer ;;
@@ -977,17 +1421,21 @@ main() {
             6) network_utilities ;;
             7) text_manipulation ;;
             8) package_management ;;
-            9) remote_access ;;
-            10) user_management ;;
-            11) system_maintenance ;;
-            12) software_installation ;;
-            13) disk_management ;;
-            14) system_information ;;
-            15) echo "Exiting OS Assistant. Goodbye!"; exit ;;
-            *) echo "Invalid choice. Please enter a number between 1 and 15." ;;
+            9) user_management ;;
+            10) system_maintenance ;;
+            11) software_installation ;;
+            12) disk_management ;;
+            13) system_information ;;
+            14) service_management ;;
+            15) system_benchmarking ;;
+            16) zenity --info --text="Exiting OS Assistant. Goodbye!" --width=600 --height=800; exit ;;
+            *) zenity --error --text="Invalid choice. Please enter a number between 1 and 16." --width=600 --height=800 ;;
         esac
     done
 }
+
+
+
 
 # Run the main function
 main
