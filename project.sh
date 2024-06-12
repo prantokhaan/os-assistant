@@ -138,20 +138,16 @@ file_organizer() {
 
 # Function to add a new folder
 add_new_folder() {
-    # Prompt the user to select the destination folder
     destination_folder=$(zenity --file-selection --directory --title="Select Destination Folder" --width=600 --height=800)
     
-    # Check if the user cancelled the operation
     if [ -z "$destination_folder" ]; then
         zenity --error --title="Add New Folder" --text="No destination folder selected. Operation cancelled." --width=600 --height=800
         return
     fi
 
-    # Prompt the user for the new folder name
     new_folder_name=$(zenity --entry --title="Add New Folder" --text="Enter the name of the new folder:" --width=600 --height=800)
     
     if [ -n "$new_folder_name" ]; then
-        # Create the new folder
         mkdir "$destination_folder/$new_folder_name"
         
         zenity --info --text="New folder '$new_folder_name' has been created in '$destination_folder'."
@@ -163,20 +159,16 @@ add_new_folder() {
 }
 
 add_new_file() {
-    # Prompt the user to select the destination folder
     destination_folder=$(zenity --file-selection --directory --title="Select Destination Folder" --width=600 --height=800)
     
-    # Check if the user cancelled the operation
     if [ -z "$destination_folder" ]; then
         zenity --error --title="Add New File" --text="No destination folder selected. Operation cancelled." --width=600 --height=800
         return
     fi
 
-    # Prompt the user for the new file name
     new_file_name=$(zenity --entry --title="Add New File" --text="Enter the name of the new file:" --width=600 --height=800)
     
     if [ -n "$new_file_name" ]; then
-        # Create an empty file
         touch "$destination_folder/$new_file_name"
         
         zenity --info --text="New file '$new_file_name' has been created in '$destination_folder'."
@@ -191,15 +183,12 @@ add_new_file() {
 
 # Function to move files
 move_files() {
-    # Prompt the user to select the file(s) to move
     files_to_move=$(zenity --file-selection --title="Select Files to Move" --multiple --separator=" " --width=600 --height=800)
     
     if [ -n "$files_to_move" ]; then
-        # Prompt the user to select the destination folder
         destination_folder=$(zenity --file-selection --title="Select Destination Folder" --directory --width=600 --height=800)
         
         if [ -n "$destination_folder" ]; then
-            # Move the selected files to the destination folder
             mv $files_to_move "$destination_folder"/
             zenity --info --text="Files have been moved to '$destination_folder'." --width=600 --height=800
         else
@@ -214,25 +203,20 @@ move_files() {
 
 
 move_folders() {
-    # Prompt the user to select the source folder
     source_folder=$(zenity --file-selection --directory --title="Select Folder to Move" --width=600 --height=800)
     
-    # Check if the user cancelled the operation
     if [ -z "$source_folder" ]; then
         zenity --error --title="Move Folder" --text="No source folder selected. Operation cancelled." --width=600 --height=800
         return
     fi
     
-    # Prompt the user to select the destination
     dest_folder=$(zenity --file-selection --directory --title="Select Destination Folder" --width=600 --height=800)
     
-    # Check if the user cancelled the operation
     if [ -z "$dest_folder" ]; then
         zenity --error --title="Move Folder" --text="No destination folder selected. Operation cancelled." --width=600 --height=800
         return
     fi
     
-    # Move the folder
     mv "$source_folder" "$dest_folder"
     
     if [ $? -eq 0 ]; then
@@ -247,15 +231,12 @@ move_folders() {
 
 # Function to copy files
 copy_files() {
-    # Prompt the user to select the file(s) to copy
     files_to_copy=$(zenity --file-selection --title="Select Files to Copy" --multiple --separator=" " --width=600 --height=800)
     
     if [ -n "$files_to_copy" ]; then
-        # Prompt the user to select the destination folder
         destination_folder=$(zenity --file-selection --title="Select Destination Folder" --directory --width=600 --height=800)
         
         if [ -n "$destination_folder" ]; then
-            # Copy the selected files to the destination folder
             cp -r $files_to_copy "$destination_folder"/
             zenity --info --text="Files have been copied to '$destination_folder'." --width=600 --height=800
         else
@@ -269,25 +250,20 @@ copy_files() {
 }
 
 copy_folders() {
-    # Prompt the user to select the source folder
     source_folder=$(zenity --file-selection --directory --title="Select Folder to Copy" --width=600 --height=800)
     
-    # Check if the user cancelled the operation
     if [ -z "$source_folder" ]; then
         zenity --error --title="Copy Folder" --text="No source folder selected. Operation cancelled." --width=600 --height=800
         return
     fi
     
-    # Prompt the user to select the destination
     dest_folder=$(zenity --file-selection --directory --title="Select Destination Folder" --width=600 --height=800)
     
-    # Check if the user cancelled the operation
     if [ -z "$dest_folder" ]; then
         zenity --error --title="Copy Folder" --text="No destination folder selected. Operation cancelled." --width=600 --height=800
         return
     fi
     
-    # Copy the folder
     cp -r "$source_folder" "$dest_folder"
     
     if [ $? -eq 0 ]; then
@@ -302,16 +278,13 @@ copy_folders() {
 
 # Function to rename a folder
 rename_folder() {
-    # Prompt the user to select the folder to rename
     folder=$(zenity --file-selection --directory --title="Select Folder to Rename" --width=600 --height=800)
     
-    # Check if the user cancelled the operation
     if [ -z "$folder" ]; then
         zenity --error --title="Rename Folder" --text="No folder selected. Operation cancelled." --width=600 --height=800
         return
     fi
     
-    # Prompt the user to enter the new name for the folder
     new_name=$(zenity --entry --title="Rename Folder" --text="Enter the new name for the folder:" --width=600 --height=800)
     
     if [ -n "$new_name" ]; then
@@ -324,7 +297,7 @@ rename_folder() {
     file_organizer
 }
 
-
+# Function to rename a file
 rename_file() {
     folder="$1"
     file=$(zenity --file-selection --title="Select File to Rename" --filename="$folder/" --width=600 --height=800)
@@ -347,13 +320,10 @@ rename_file() {
 delete_file() {
     folder="$1"
 
-    # Prompt the user to select the file to delete
     file_name=$(zenity --file-selection --title="Select File to Delete")
     
     if [ -n "$file_name" ]; then
-        # Check if the selected file exists
         if [ -f "$file_name" ]; then
-            # Delete the file
             rm "$file_name"
             zenity --info --text="File '$file_name' has been deleted."
         else
@@ -371,13 +341,10 @@ delete_file() {
 delete_folder() {
     folder="$1"
 
-    # Prompt the user to select the folder to delete
     folder_name=$(zenity --file-selection --title="Select Folder to Delete" --directory)
     
     if [ -n "$folder_name" ]; then
-        # Check if the selected folder exists
         if [ -d "$folder_name" ]; then
-            # Delete the folder and its contents recursively
             rm -r "$folder_name"
             zenity --info --text="Folder '$folder_name' and its contents have been deleted."
         else
@@ -396,7 +363,6 @@ delete_folder() {
 sort_files() {
     folder="$1"
 
-    # Display the sorting options
     choice=$(zenity --list --title="Sorting Options" --text="Select an option to sort files:" \
         --width=600 --height=800 \
         --column="Option" --column="Description" \
@@ -408,7 +374,6 @@ sort_files() {
         6 "Main Menu")
     
     if [ -z "$choice" ]; then
-        # Exit if the choice is empty (user clicked Cancel or closed the dialog)
         exit
     fi
     
@@ -427,24 +392,19 @@ sort_files() {
 
 # Function to sort files by name
 sort_by_name() {
-    # Prompt the user to select the folder to sort
     folder=$(zenity --file-selection --directory --title="Select Folder to Sort" --width=600 --height=800)
     
-    # Check if the user cancelled the operation
     if [ -z "$folder" ]; then
         zenity --error --title="Sort by Name" --text="No folder selected. Operation cancelled." --width=600 --height=800
         return
     fi
 
-    # Sort files by name and save the sorted list to a temporary file
     sorted_files=$(ls -l "$folder" | sort -k 9)
     temp_file=$(mktemp)
     echo "$sorted_files" > "$temp_file"
 
-    # Display the sorted files using zenity
     zenity --text-info --title="Sorted Files (by Name)" --width=800 --height=600 --filename="$temp_file"
     
-    # Remove the temporary file
     rm "$temp_file"
 }
 
@@ -453,65 +413,50 @@ sort_by_name() {
 
 # Function to sort files by size
 sort_by_size() {
-    # Prompt the user to select the folder to sort
     folder=$(zenity --file-selection --directory --title="Select Folder to Sort" --width=600 --height=800)
     
-    # Check if the user cancelled the operation
     if [ -z "$folder" ]; then
         zenity --error --title="Sort by Size" --text="No folder selected. Operation cancelled." --width=600 --height=800
         return
     fi
 
-    # Sort files by size and save the sorted list to a temporary file
     temp_file=$(mktemp)
     ls -lSh "$folder" > "$temp_file"
     
-    # Display the sorted files using zenity
     zenity --text-info --title="Sorted Files (by Size)" --width=800 --height=600 --filename="$temp_file"
     
-    # Remove the temporary file
     rm "$temp_file"
 }
 
 sort_by_modification_time() {
-    # Prompt the user to select the folder to sort
     folder=$(zenity --file-selection --directory --title="Select Folder to Sort" --width=600 --height=800)
     
-    # Check if the user cancelled the operation
     if [ -z "$folder" ]; then
         zenity --error --title="Sort by Modification Time" --text="No folder selected. Operation cancelled." --width=600 --height=800
         return
     fi
 
-    # Sort files by modification time and save the sorted list to a temporary file
     temp_file=$(mktemp)
     ls -lt "$folder" > "$temp_file"
     
-    # Display the sorted files using zenity
     zenity --text-info --title="Sorted Files (by Modification Time)" --width=800 --height=600 --filename="$temp_file"
     
-    # Remove the temporary file
     rm "$temp_file"
 }
 
 sort_by_file_type() {
-    # Prompt the user to select the folder to sort
     folder=$(zenity --file-selection --directory --title="Select Folder to Sort" --width=600 --height=800)
     
-    # Check if the user cancelled the operation
     if [ -z "$folder" ]; then
         zenity --error --title="Sort by File Type" --text="No folder selected. Operation cancelled." --width=600 --height=800
         return
     fi
     
-    # Sort files by file type and save the sorted list to a temporary file
     temp_file=$(mktemp)
     ls -l --group-directories-first "$folder" > "$temp_file"
     
-    # Display the sorted files using zenity
     zenity --text-info --title="Sorted Files (by File Type)" --width=800 --height=600 --filename="$temp_file"
     
-    # Remove the temporary file
     rm "$temp_file"
 }
 
@@ -519,11 +464,9 @@ sort_by_file_type() {
 
 # Function for system monitor
 system_monitor() {
-    # Check if iostat is installed
     if ! command -v iostat &> /dev/null; then
         echo "iostat command not found. Installing sysstat package..."
         
-        # Check the package manager and install sysstat
         if [ -x "$(command -v apt-get)" ]; then
             sudo apt-get update
             sudo apt-get install -y sysstat
@@ -535,11 +478,9 @@ system_monitor() {
         fi
     fi
 
-    # Check if netstat is installed
     if ! command -v netstat &> /dev/null; then
         echo "netstat command not found. Installing net-tools package..."
         
-        # Check the package manager and install net-tools
         if [ -x "$(command -v apt-get)" ]; then
             sudo apt-get update
             sudo apt-get install -y net-tools
@@ -563,7 +504,6 @@ system_monitor() {
             7 "View System uptime" \
             8 "Return to the main menu")
         if [ -z "$choice" ]; then
-            # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $choice in
@@ -612,16 +552,13 @@ create_backup() {
 
     source_dir=$(zenity --file-selection --title="Select Folder to Backup" --directory --filename="$PWD/")
     
-    # Check if the directory exists
     if [ ! -d "$source_dir" ]; then
         zenity --error --title="Error" --text="Directory '$source_dir' does not exist."
         return
     fi
     
-    # Create backup directory if it doesn't exist
     mkdir -p "$BACKUP_DIR"
     
-    # Create the backup
     timestamp=$(date +%Y%m%d%H%M%S)
     backup_file="$BACKUP_DIR/backup_$timestamp.tar.gz"
     tar -czvf "$backup_file" "$source_dir" 2>/dev/null
@@ -635,42 +572,32 @@ restore_backup() {
     clear
     echo "Restore Backup"
     
-    # List available backups
     echo "Available backups:"
     backups=$(ls "$BACKUP_DIR"/backup_*.tar.gz)
     
-    # Check if there are any backups
     if [ -z "$backups" ]; then
         zenity --error --title="Error" --text="No backups found in '$BACKUP_DIR'." --width=600 --height=800
         return
     fi
     
-    # Convert backups list to a format Zenity can read
     backup_list=$(echo "$backups" | tr ' ' '\n')
     
-    # Prompt the user to select a backup file
     backup_file=$(zenity --list --title="Restore Backup" --text="Select the backup file to restore:" --column="Backup Files" $backup_list --width=600 --height=800)
     
-    # Check if the user cancelled the operation
     if [ -z "$backup_file" ]; then
         return
     fi
     
-    # Extract just the filename from the selected backup file
     backup_file=$(basename "$backup_file")
     
-    # Prompt the user for the restore directory
     restore_dir=$(zenity --file-selection --directory --title="Select Restore Directory" --width=600 --height=800)
     
-    # Check if the user cancelled the operation
     if [ -z "$restore_dir" ]; then
         return
     fi
     
-    # Create the restore directory if it doesn't exist
     mkdir -p "$restore_dir"
     
-    # Restore the backup
     tar -xzvf "$BACKUP_DIR/$backup_file" -C "$restore_dir" 2>/dev/null
     
     if [ $? -eq 0 ]; then
@@ -689,13 +616,11 @@ list_backups() {
     if [ -z "$backups" ]; then
         zenity --info --title="No Backups" --text="No backups found in '$BACKUP_DIR'." --width=600 --height=800
     else
-        # Convert backups list to a format Zenity can read
         backup_list=$(echo "$backups" | tr ' ' '\n')
         
         zenity --list --title="Available Backups" --column="Backups" --width=600 --height=800 $backup_list
     fi
     
-    # Show a Zenity dialog to return to the backup menu
     zenity --info --title="Return to Menu" --text="Press OK to return to the backup menu." --width=600 --height=800
 }
 
@@ -707,31 +632,24 @@ delete_backup() {
     clear
     echo "Delete Backup"
     
-    # List available backups
     echo "Available backups:"
     backups=$(ls "$BACKUP_DIR"/backup_*.tar.gz)
     
-    # Check if there are any backups
     if [ -z "$backups" ]; then
         zenity --error --title="Error" --text="No backups found in '$BACKUP_DIR'." --width=600 --height=800
         return
     fi
     
-    # Convert backups list to a format Zenity can read
     backup_list=$(echo "$backups" | tr ' ' '\n')
     
-    # Prompt the user to select a backup file to delete
     backup_file=$(zenity --list --title="Delete Backup" --text="Select the backup file to delete:" --column="Backup Files" $backup_list --width=600 --height=800)
     
-    # Check if the user cancelled the operation
     if [ -z "$backup_file" ]; then
         return
     fi
     
-    # Extract just the filename from the selected backup file
     backup_file=$(basename "$backup_file")
     
-    # Confirm deletion
     zenity --question --title="Confirm Deletion" --text="Are you sure you want to delete '$backup_file'?" --width=600 --height=800
     if [ $? -eq 0 ]; then
         rm "$BACKUP_DIR/$backup_file"
@@ -751,7 +669,6 @@ backup() {
             5 "Return to the main menu" "This will return to the main menu" \
             --text="Please select an option:")
         if [ -z "$choice" ]; then
-            # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $choice in
@@ -792,7 +709,6 @@ add_password() {
         return
     fi
     
-    # Check if the service already exists
     if grep -q "^$service:" "$PASSWORD_FILE"; then
         zenity --error --title="Error" --text="Service name already exists." --width=600 --height=800
         return
@@ -967,21 +883,16 @@ ping_host() {
 traceroute_destination() {
     destination=$(zenity --entry --title="Traceroute Destination" --text="Enter the destination to traceroute:")
     if [ -n "$destination" ]; then
-        # Create a temporary file to store the traceroute result
         temp_file=$(mktemp)
         
-        # Run traceroute and redirect both stdout and stderr to the temporary file
         traceroute "$destination" &> "$temp_file"
 
-        # Check if the temporary file has any content
         if [ -s "$temp_file" ]; then
-            # Display the contents of the temporary file in Zenity
             zenity --text-info --title="Traceroute Result" --width=600 --height=800 --filename="$temp_file"
         else
             zenity --info --title="Traceroute Result" --text="No traceroute result for $destination." --width=600 --height=200
         fi
         
-        # Remove the temporary file
         rm -f "$temp_file"
     else
         zenity --error --title="Error" --text="No destination entered."
@@ -994,21 +905,16 @@ traceroute_destination() {
 dns_lookup() {
     target=$(zenity --entry --title="DNS Lookup" --text="Enter the domain name or IP address to lookup:")
     if [ -n "$target" ]; then
-        # Create a temporary file to store the nslookup result
         temp_file=$(mktemp)
         
-        # Run nslookup and redirect both stdout and stderr to the temporary file
         nslookup "$target" &> "$temp_file"
 
-        # Check if the temporary file has any content
         if [ -s "$temp_file" ]; then
-            # Display the contents of the temporary file in Zenity
             zenity --text-info --title="DNS Lookup Result" --width=600 --height=400 --filename="$temp_file"
         else
             zenity --info --title="DNS Lookup Result" --text="No DNS lookup result for $target." --width=600 --height=200
         fi
         
-        # Remove the temporary file
         rm -f "$temp_file"
     else
         zenity --error --title="Error" --text="No target entered."
@@ -1017,23 +923,17 @@ dns_lookup() {
 
 
 
-# Function to display netstat information
 show_netstat() {
-    # Create a temporary file to store the netstat information
     temp_file=$(mktemp)
     
-    # Run netstat and redirect both stdout and stderr to the temporary file
     netstat -tuln &> "$temp_file"
 
-    # Check if the temporary file has any content
     if [ -s "$temp_file" ]; then
-        # Display the contents of the temporary file in Zenity
         zenity --text-info --title="Netstat Information" --width=600 --height=800 --filename="$temp_file"
     else
         zenity --info --title="Netstat Information" --text="No netstat information available." --width=600 --height=200
     fi
     
-    # Remove the temporary file
     rm -f "$temp_file"
 }
 
@@ -1053,9 +953,8 @@ network_utilities() {
             3 "Traceroute" \
             4 "DNS Lookup" \
             5 "Netstat" \
-            7 "Return to Main Menu")
+            6 "Return to Main Menu")
 if [ -z "$choice" ]; then
-            # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $choice in
@@ -1089,7 +988,6 @@ text_manipulation() {
             9 "Return to the main menu" \
             --height=800 --width=600)
         if [ -z "$choice" ]; then
-            # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $choice in
@@ -1240,7 +1138,6 @@ package_management() {
         6 "Return to the main menu" \
         --height=800 --width=600)
         if [ -z "$choice" ]; then
-            # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $choice in
@@ -1263,8 +1160,6 @@ install_package() {
     package_name=$(zenity --entry --title="Install Package" --text="Enter the name of the package to install:")
     
     if [ -n "$package_name" ]; then
-        # Use the package manager's install command (e.g., apt, yum, etc.) to install the package
-        # For example, on Ubuntu:
         sudo apt install "$package_name"
         zenity --info --text="Package '$package_name' installed successfully."
     else
@@ -1276,14 +1171,10 @@ install_package() {
 # Function to update installed packages
 update_packages() {
     clear
-    # Display a message informing the user that the packages are being updated
     zenity --info --text="Updating installed packages..."
 
-    # Use the package manager's update command to update installed packages
-    # For example, on Ubuntu:
     sudo apt update && sudo apt upgrade
 
-    # Display a message indicating that the update process is complete
     zenity --info --text="Packages have been successfully updated."
 }
 
@@ -1291,21 +1182,15 @@ update_packages() {
 # Function to remove a package
 remove_package() {
     clear
-    # Prompt the user to enter the name of the package to remove
     package_name=$(zenity --entry --title="Remove Package" --text="Enter the name of the package to remove:")
     
-    # Check if the user entered a package name
     if [ -z "$package_name" ]; then
-        # Display an error message if no package name is provided
         zenity --error --text="Package name cannot be empty. Please enter a valid package name."
         return
     fi
     
-    # Use the package manager's remove command to uninstall the package
-    # For example, on Ubuntu:
     sudo apt remove "$package_name"
     
-    # Display a message indicating that the package has been removed
     zenity --info --text="Package '$package_name' has been successfully removed."
 }
 
@@ -1313,18 +1198,13 @@ remove_package() {
 # Function to search for a package
 search_package() {
     clear
-    # Prompt the user to enter the name of the package to search for
     package_name=$(zenity --entry --title="Search Package" --text="Enter the name of the package to search for:")
     
-    # Check if the user entered a package name
     if [ -z "$package_name" ]; then
-        # Display an error message if no package name is provided
         zenity --error --text="Package name cannot be empty. Please enter a valid package name."
         return
     fi
     
-    # Use the package manager's search command to search for the package
-    # For example, on Ubuntu:
     apt search "$package_name" | zenity --text-info --width=600 --height=400 --title="Search Results for $package_name"
 }
 
@@ -1332,11 +1212,8 @@ search_package() {
 # Function to list installed packages
 list_installed_packages() {
     clear
-    # Use the package manager's list command to list installed packages
-    # For example, on Ubuntu:
     installed_packages=$(dpkg -l)
     
-    # Display the installed packages using Zenity
     zenity --text-info --width=800 --height=600 --title="Installed Packages" --editable --filename=<(echo "$installed_packages")
 }
 
@@ -1362,7 +1239,6 @@ user_management() {
             --height=800 \
             --width=600)
         if [ -z "$option" ]; then
-            # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $option in
@@ -1436,7 +1312,6 @@ system_maintenance() {
             9 "Return to main menu" \
             --height=800 --width=600 --cancel-label="Cancel")
         if [ -z "$choice" ]; then
-            # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $choice in
@@ -1501,7 +1376,6 @@ software_installation() {
             7 "Return to main menu" \
             --height=800 --width=600 --cancel-label="Cancel")
         if [ -z "$choice" ]; then
-            # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $choice in
@@ -1557,7 +1431,6 @@ disk_management() {
             6 "Return to main menu" \
             --height=800 --width=600 --cancel-label="Cancel")
         if [ -z "$choice" ]; then
-            # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $choice in
@@ -1612,7 +1485,6 @@ system_information() {
             6 "Return to main menu" \
             --height=800 --width=600 --cancel-label="Cancel")
         if [ -z "$option" ]; then
-            # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $option in
@@ -1654,7 +1526,6 @@ service_management() {
             6 "Return to main menu" \
             --height=800 --width=600 --cancel-label="Cancel")
         if [ -z "$option" ]; then
-            # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $option in
@@ -1700,7 +1571,6 @@ system_benchmarking() {
             5 "Return to main menu" \
             --height=800 --width=600 --cancel-label="Cancel")
         if [ -z "$option" ]; then
-            # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         case $option in
@@ -1738,7 +1608,6 @@ main() {
     while true; do
         choice=$(display_menu)
         if [ -z "$choice" ]; then
-            # Exit if the choice is empty (user clicked Cancel or closed the dialog)
             exit
         fi
         
